@@ -1,0 +1,50 @@
+name: Cross-platform checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · Node.js 22.22.0
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v7
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.22.0
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 安装基础示例依赖
+        run: npm install --prefix examples/basic --no-save --package-lock=false
+
+      - name: 类型检查、单元测试与示例构建
+        run: npm run verify
+
+      - name: 发布包集成冒烟测试
+        run: npm run test:pack
+
+      - name: 最低 peer 依赖兼容性测试
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run test:pack:min
