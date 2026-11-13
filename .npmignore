@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+tests/
+examples/
+vitest.config.ts
+tsconfig*.json
+*.tsbuildinfo
