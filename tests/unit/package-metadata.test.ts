@@ -28,7 +28,7 @@ describe("发布元数据", () => {
     expect(packageJson.type).toBe("module");
     expect(packageJson.repository).toEqual({
       type: "git",
-      url: "https://github.com/alon-wu/vite-plugin-react-router-routecraft.git",
+      url: "git+https://github.com/alon-wu/vite-plugin-react-router-routecraft.git",
     });
     expect(packageJson.homepage).toBe(
       "https://alon-wu.github.io/vite-plugin-react-router-routecraft/",

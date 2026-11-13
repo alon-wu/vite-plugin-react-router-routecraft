@@ -23,7 +23,10 @@ const consumerRoot = await mkdtemp(
 let devServer;
 
 try {
-  run(["pack", "--pack-destination", consumerRoot], packageRoot);
+  run(
+    ["pack", "--dry-run=false", "--pack-destination", consumerRoot],
+    packageRoot,
+  );
   const tarball = join(
     consumerRoot,
     `${packageManifest.name}-${packageManifest.version}.tgz`,
@@ -66,7 +69,13 @@ try {
     devServer.kill("SIGTERM");
     await closed;
   }
-  await rm(consumerRoot, { recursive: true, force: true });
+  // Vite 的依赖优化目录可能在开发服务器退出时仍处于并发收尾状态。
+  await rm(consumerRoot, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  });
 }
 
 function run(args, cwd) {
@@ -78,7 +87,10 @@ function run(args, cwd) {
       encoding: "utf8",
       stdio: "inherit",
       shell: npmInvocation.shell,
-      env: process.env,
+      env: {
+        ...process.env,
+        npm_config_dry_run: "false",
+      },
     },
   );
   if (result.error) throw result.error;

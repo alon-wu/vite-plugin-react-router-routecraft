@@ -16,9 +16,9 @@ Routecraft 不会安装 React、React DOM、`@vitejs/plugin-react` 或应用所�
 
 ## 2. 安装方式
 
-### npm 发布之后
+### 安装发布版本
 
-当前仓库标记为未发布。包发布后，在 Vite React 项目中安装：
+在 Vite React 项目中安装 Routecraft 及其 peer dependencies：
 
 ```sh
 npm install react react-dom react-router
@@ -26,11 +26,11 @@ npm install -D vite @vitejs/plugin-react typescript
 npm install -D vite-plugin-react-router-routecraft
 ```
 
-发布后的准确版本、peer dependency 要求和 npm 安装命令以 npm 包页面及本仓库 `package.json` 为准。
+准确版本、peer dependency 要求和安装状态以 npm 包页面及本仓库 `package.json` 为准。
 
 ### 当前仓库试用
 
-无需在应用中猜测包名是否已发布。克隆本仓库后，直接运行自带集成示例：
+克隆本仓库后，可直接运行自带集成示例：
 
 ```sh
 npm install
@@ -41,7 +41,7 @@ npm --prefix examples/basic run dev
 
 在输出的本地地址访问示例应用。启用了 DevTools 时，再访问该地址下的 `/__routecraft`。
 
-如果要在自己的应用试用未发布版本，可在仓库根目录先构建 npm tarball，再把 tarball 路径安装进应用：
+如果要在自己的应用中从本地源码试用，可在仓库根目录先构建 npm tarball，再把 tarball 路径安装进应用：
 
 ```sh
 # 在 Routecraft 仓库根目录

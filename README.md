@@ -2,7 +2,7 @@
 
 **Routecraft** 是一个 Vite 插件：按约定目录生成 React Router v8 Data Mode 的 `RouteObject[]`，自动更新路由类型声明，并在开发期提供独立 DevTools 页面。
 
-> 当前代码处于发布前验证状态，尚未发布 npm。请先使用随项目提供的示例应用试用，再在目标项目检查 React Router 与 Vite 版本兼容性。Routecraft 不实现 React Router Framework Mode，也不提供服务端鉴权或数据运行时。
+> Routecraft 面向 React Router Data Mode；接入前请确认项目使用的 React Router 与 Vite 版本符合 peer dependency 要求。Routecraft 不实现 React Router Framework Mode，也不提供服务端鉴权或数据运行时。
 
 **文档站：**[Routecraft 文档](https://alon-wu.github.io/vite-plugin-react-router-routecraft/) · [完整示例](https://alon-wu.github.io/vite-plugin-react-router-routecraft/examples/complete-app) · [架构设计](https://alon-wu.github.io/vite-plugin-react-router-routecraft/architecture/)
 
@@ -27,7 +27,7 @@
 
 仓库中的 `examples/basic` 是用于插件自动化验证的精简夹具，不是完整产品教程。完整、具体的应用级示例请阅读[项目管理台完整示例](https://alon-wu.github.io/vite-plugin-react-router-routecraft/examples/complete-app)。
 
-当前插件未发布，先构建本地包，再安装示例依赖：
+从源码运行仓库内的集成示例：
 
 ```sh
 npm install

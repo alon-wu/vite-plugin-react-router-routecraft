@@ -45,9 +45,9 @@ const router = createBrowserRouter(routeObjects);
 
 `virtual:routecraft/routes` 是 **Routecraft 插件通过 Vite 提供的虚拟模块**，不是 React Router 的导出，也不是可以直接交给 Node.js 的普通文件路径。详见[安装与快速开始](/getting-started#应用接入)。
 
-## 项目状态
+## 版本与安装
 
-当前仓库包版本为 `0.1.0`，处于发布前验证阶段；本项目目前尚未发布到 npm。安装指南据此分别说明仓库内试用和未来 npm 发布后的安装方式，不把未发布状态描述成已可安装。
+当前源码包版本为 `0.1.0`。请通过[安装指南](/getting-started)选择 npm 发布版本、仓库示例或本地 tarball；实际可安装版本以 npm registry 页面为准。
 
 ## 从这里开始
 

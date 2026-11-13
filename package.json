@@ -5,7 +5,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alon-wu/vite-plugin-react-router-routecraft.git"
+    "url": "git+https://github.com/alon-wu/vite-plugin-react-router-routecraft.git"
   },
   "homepage": "https://alon-wu.github.io/vite-plugin-react-router-routecraft/",
   "bugs": {

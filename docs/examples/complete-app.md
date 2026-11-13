@@ -73,7 +73,7 @@ examples/complete-app/
 
 ## 项目基础文件
 
-以下示例假定将项目保存于 Routecraft 仓库的 `examples/complete-app`，因此本地插件依赖通过 `file:../..` 指向仓库根目录。独立应用在插件发布后按[安装指南](/getting-started#安装方式)安装；当前未发布状态下先在仓库根目录运行 `npm pack`，再安装生成的 tarball。
+以下示例假定将项目保存于 Routecraft 仓库的 `examples/complete-app`，因此本地插件依赖通过 `file:../..` 指向仓库根目录。独立应用按[安装指南](/getting-started#安装方式)安装发布版本；也可在仓库根目录运行 `npm pack`，再安装生成的 tarball，以验证当前源码构建出的包。
 
 `examples/complete-app/package.json`：
 
@@ -945,7 +945,7 @@ npm --prefix examples/complete-app run dev
 
 浏览器打开 Vite 输出的本地地址后，可依次检查 `/`、`/pricing`、`/auth/sign-in`、`/auth/sign-up`、`/workspace`、`/workspace/projects` 与项目详情路径。开发服务器运行期间，还可以打开同源 `/__routecraft` 查看扫描结果和路由树。
 
-仓库中的 `examples/basic` 仍是自动化验证夹具，不包含本页的演示业务页面。当前插件尚未发布 npm；由于本示例包清单使用 `"vite-plugin-react-router-routecraft": "file:../.."`，请将完整示例文件放在上述仓库相对目录下安装和运行。独立于该仓库使用时，先在插件仓库执行 `npm pack`，再在应用中把依赖改为生成的 tarball 文件路径。
+仓库中的 `examples/basic` 仍是自动化验证夹具，不包含本页的演示业务页面。由于本示例包清单使用 `"vite-plugin-react-router-routecraft": "file:../.."`，请将完整示例文件放在上述仓库相对目录下安装和运行。独立于该仓库使用时，可通过[安装指南](/getting-started#安装方式)安装发布版本，或在插件仓库执行 `npm pack` 后安装生成的 tarball。
 
 ## 12. 演示边界
 
