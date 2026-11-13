@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -17,7 +17,9 @@ const npmInvocation = resolveNpmInvocation(
   process.env.npm_execpath,
 );
 const minimumPeers = process.argv.includes("--minimum-peers");
-const consumerRoot = await mkdtemp(join(tmpdir(), "routecraft-package-smoke-"));
+const consumerRoot = await mkdtemp(
+  join(await realpath(tmpdir()), "routecraft-package-smoke-"),
+);
 let devServer;
 
 try {
