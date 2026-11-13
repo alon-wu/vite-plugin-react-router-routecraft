@@ -5,28 +5,33 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { resolveNpmInvocation } from "./npm-command.mjs";
 
 const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packageManifest = JSON.parse(
   await readFile(join(packageRoot, "package.json"), "utf8"),
 );
-const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmInvocation = resolveNpmInvocation(
+  process.platform,
+  process.execPath,
+  process.env.npm_execpath,
+);
 const minimumPeers = process.argv.includes("--minimum-peers");
 const consumerRoot = await mkdtemp(join(tmpdir(), "routecraft-package-smoke-"));
 let devServer;
 
 try {
-  run(npmCommand, ["pack", "--pack-destination", consumerRoot], packageRoot);
+  run(["pack", "--pack-destination", consumerRoot], packageRoot);
   const tarball = join(
     consumerRoot,
     `${packageManifest.name}-${packageManifest.version}.tgz`,
   );
 
   await writeConsumerFiles(consumerRoot, tarball);
-  run(npmCommand, ["install", "--no-audit", "--no-fund"], consumerRoot);
+  run(["install", "--no-audit", "--no-fund"], consumerRoot);
   // Vite 插件在构建阶段生成路由类型声明，因此必须先构建再做独立类型检查。
-  run(npmCommand, ["run", "build"], consumerRoot);
-  run(npmCommand, ["run", "typecheck"], consumerRoot);
+  run(["run", "build"], consumerRoot);
+  run(["run", "typecheck"], consumerRoot);
 
   const port = 4170 + Math.floor(Math.random() * 1000);
   devServer = spawn(
@@ -62,16 +67,23 @@ try {
   await rm(consumerRoot, { recursive: true, force: true });
 }
 
-function run(command, args, cwd) {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: "inherit",
-    env: process.env,
-  });
+function run(args, cwd) {
+  const result = spawnSync(
+    npmInvocation.command,
+    [...npmInvocation.args, ...args],
+    {
+      cwd,
+      encoding: "utf8",
+      stdio: "inherit",
+      shell: npmInvocation.shell,
+      env: process.env,
+    },
+  );
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} 失败，退出码：${result.status}`);
+    throw new Error(
+      `${npmInvocation.command} ${args.join(" ")} 失败，退出码：${result.status}`,
+    );
   }
 }
 
