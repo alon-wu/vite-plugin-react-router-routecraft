@@ -10,7 +10,7 @@ description: "在 Vite 项目中使用 vite-plugin-react-router-routecraft 规�
 ## 工作流程
 
 1. **先检查项目现状。** 查看 `package.json` 中 Routecraft、React Router 和 Vite 的实际版本；检查 `vite.config.*` 中的 `routesDir`、`typesDir`、`defaultLazy` 与 `devTools`；检查现有路由入口及路由目录。不要假定默认目录，也不要覆盖用户已有的路由器或布局。
-2. **按实际安装版本核对规则。** 优先阅读已安装包中的 `docs/guides/routing-conventions.md`、`docs/guides/lazy-and-data.md`、`docs/guides/configuration.md` 和 `docs/guides/type-generation.md`。若正在 Routecraft 仓库中工作，则阅读仓库的 `docs/guides/` 对应文件。若找不到版本匹配的文档，不要猜测；先说明这一点，再参考用户项目已有配置或请求补充信息。
+2. **按实际安装版本核对规则。** 在用户项目中，先从项目根目录检查 `node_modules/vite-plugin-react-router-routecraft/docs/guides/` 下的 `routing-conventions.md`、`lazy-and-data.md`、`configuration.md` 和 `type-generation.md`；npm 包将 `docs/` 随包发布。若该路径不存在（例如使用未物化 `node_modules` 的包管理器），先从项目依赖解析 `vite-plugin-react-router-routecraft` 的实际安装位置，再到该包目录下查找 `docs/guides/`，不要去猜插件仓库在用户机器上的位置。若正在 Routecraft 源码仓库中工作，则阅读仓库的 `docs/guides/`。若安装包内没有这些文档，不要把文档站上的最新版说成与安装版本一致；说明版本资料缺失，并以已安装版本、项目实际配置和本 Skill 的规则速查为准，无法确认时再请求补充信息。
 3. **先规划目标路由，再做最小改动。** 沿用当前目录风格、已有布局及命名。任务涉及 URL 冲突、多个可能的布局归属或会影响多条路由时，先向用户说明冲突和选项。
 4. **只创建需要的约定文件。** `page` 是页面入口；`layout` 是结构路由布局；`loader`、`action`、错误边界和 hydration fallback 都按实际需求添加。不要生成空 loader/action 或无需求的占位模块。
 5. **遵循插件生成边界。** 应用路由入口使用已安装版本文档所示的 Routecraft 虚拟模块；不要手写替代生成路由表，也不要手动编辑自动生成的 `typed-router.d.ts`。

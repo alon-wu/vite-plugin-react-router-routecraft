@@ -44,7 +44,7 @@ npx skills remove routecraft-file-routing
 - “检查这组页面的 loader 和 lazy 设置，只调整项目详情路由，不要改其他布局。”
 - “根据当前 Routecraft 版本核对这个路由目录是否符合约定；遇到不支持的目录或文件约定时先解释，不要模拟实现。”
 
-Skill 会要求助手先检查项目中 Routecraft 的实际版本、Vite 配置、路由目录和现有入口，并优先依据该版本随 npm 包提供的文档。它不会替用户安装插件、覆盖现有路由架构或假设所有 React Router 项目都使用 Routecraft。
+Skill 会要求助手先检查项目中 Routecraft 的实际版本、Vite 配置、路由目录和现有入口。插件完整指南随 npm 包发布，通常可在应用项目的 `node_modules/vite-plugin-react-router-routecraft/docs/guides/` 中查阅；若包管理器未提供这一直接路径，助手应先解析实际安装位置，而不是假设用户本地存在插件源码仓库。若完整指南不可用，Skill 会要求助手说明资料缺口，不把文档站最新版误称为安装版本文档。它不会替用户安装插件、覆盖现有路由架构或假设所有 React Router 项目都使用 Routecraft。
 
 ## 不使用 Skill CLI 时
 

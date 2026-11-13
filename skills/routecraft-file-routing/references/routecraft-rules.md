@@ -1,13 +1,17 @@
 # Routecraft 路由规则速查
 
-本文件是给 Agent Skill 使用的短版索引。**实际改动前必须以用户项目安装版本随包提供的文档为准**；Routecraft 源码仓库文档仅在开发该仓库或没有可用安装文档时使用。
+本文件是给 Agent Skill 使用的短版规则说明。它随 Skill 一起安装到用户项目中，可在无法读取完整指南时提供基本规则；涉及版本特性时，仍须核对用户实际安装的插件版本。
 
-优先查阅：
+## 在用户项目中定位完整指南
 
-- `docs/guides/routing-conventions.md`：目录、文件名、冲突和支持边界；
-- `docs/guides/lazy-and-data.md`：loader/action、布局数据模块及逐属性懒加载；
-- `docs/guides/configuration.md`：插件配置；
-- `docs/guides/type-generation.md`：生成声明与 `href()`。
+Routecraft 的 npm 包将 `docs/` 目录一并发布。安装在应用项目中时，通常可直接查阅：
+
+- `node_modules/vite-plugin-react-router-routecraft/docs/guides/routing-conventions.md`：目录、文件名、冲突和支持边界；
+- `node_modules/vite-plugin-react-router-routecraft/docs/guides/lazy-and-data.md`：loader/action、布局数据模块及逐属性懒加载；
+- `node_modules/vite-plugin-react-router-routecraft/docs/guides/configuration.md`：插件配置；
+- `node_modules/vite-plugin-react-router-routecraft/docs/guides/type-generation.md`：生成声明与 `href()`。
+
+如果项目没有上述直达路径，应从应用项目解析已安装包的位置，再在包根目录下查找 `docs/guides/`；不要假定用户本地存在 Routecraft 源码仓库。先核对应用锁文件或已安装包元数据中的 Routecraft 版本。文档站可能对应更新的仓库内容，不能在未确认版本一致时当作安装版本的权威规则。完整指南不可用时，以本文件的规则和项目中实际安装版本的行为为依据；超出已知范围的功能应明确标记为未确认，不要猜测。
 
 ## 目录到路由
 
