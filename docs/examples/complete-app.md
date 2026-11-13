@@ -818,7 +818,7 @@ export default function HydrationFallback() {
 }
 ```
 
-该文件生成根结构路由的 `HydrateFallback`，只对应 React Router 支持的 hydration fallback，不等同 Next.js `loading.tsx` 或应用内导航 loading UI。
+该文件生成根结构路由的 `HydrateFallback`，用于 hydration fallback；应用内导航提示应由应用根据 React Router 导航状态自行呈现。
 
 `src/routes/not-found.tsx`：
 
@@ -836,7 +836,7 @@ export default function NotFoundPage() {
 }
 ```
 
-当前实现只接受**根目录** `not-found.tsx`，并将它生成 React Router `/*` catch-all 叶子；不是 Next.js 的 `not-found` 边界继承模型。
+当前实现只接受**根目录** `not-found.tsx`，并将它生成 React Router `/*` catch-all 叶子。
 
 ## 10. 文件属性到 Route Object 对照
 
@@ -952,4 +952,4 @@ npm --prefix examples/complete-app run dev
 - 登录 action 不建立 session、不验证账号；生产身份校验必须在服务端完成。
 - 项目数组在前端内存中，刷新后重置；生产项目数据应经由经过授权的服务端 API 访问。
 - Routecraft 当前生成 URL、参数和 Route ID 类型，不推断业务 loader/action 返回类型。
-- Data Mode 的浏览器 loader/action 是路由应用代码，不是 Next Server Action 或后端 HTTP endpoint。
+- Data Mode 的浏览器 loader/action 是路由应用代码，不是后端 HTTP endpoint；敏感操作应由服务端接口验证。

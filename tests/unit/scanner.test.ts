@@ -74,7 +74,7 @@ describe("路由目录扫描", () => {
     expect(result.diagnostics).toEqual([]);
   });
 
-  it("对 Next.js loading 文件给出不模拟其语义的提示", () => {
+  it("对未实现的 loading 文件给出不模拟其语义的提示", () => {
     const root = createRoutesDirectory();
     addFile(root, "loading.tsx");
 
@@ -82,8 +82,9 @@ describe("路由目录扫描", () => {
 
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
-        code: "RC_UNSUPPORTED_NEXT_CONVENTION",
+        code: "RC_UNSUPPORTED_ROUTE_CONVENTION",
         level: "warning",
+        message: "“loading.tsx”使用了 Routecraft 当前不支持的文件约定；该文件不会生成路由功能。",
       }),
     );
   });
@@ -99,7 +100,7 @@ describe("路由目录扫描", () => {
     );
   });
 
-  it("不把 Next.js Parallel/Intercepting Route 目录误当 URL 段", () => {
+  it("不把未支持的特殊目录误当 URL 段", () => {
     const root = createRoutesDirectory();
     addFile(root, "@modal/page.tsx");
     addFile(root, "(.)photo/page.tsx");
@@ -109,7 +110,7 @@ describe("路由目录扫描", () => {
     expect(result.children).toEqual([]);
     expect(result.diagnostics.filter((item) => item.level === "error")).toEqual([]);
     expect(
-      result.diagnostics.filter((item) => item.code === "RC_UNSUPPORTED_NEXT_CONVENTION"),
+      result.diagnostics.filter((item) => item.code === "RC_UNSUPPORTED_ROUTE_CONVENTION"),
     ).toHaveLength(2);
   });
 });

@@ -38,6 +38,7 @@ export default defineConfig({
             { text: "目录与文件约定", link: "/guides/routing-conventions" },
             { text: "Lazy、loader 与 action", link: "/guides/lazy-and-data" },
             { text: "类型声明与 href", link: "/guides/type-generation" },
+            { text: "AI 编码助手", link: "/guides/ai-assistants" },
             { text: "开发者工具", link: "/guides/devtools" },
           ],
         },

@@ -76,7 +76,7 @@ Routecraft 为路由根产生共同的 pathless 根对象；`(auth)`、`(workspa
 
 - 有 error 时插件不把有错误的 IR 编译成“成功”快照；生产构建报错并终止。
 - 开发服务器将诊断写入 Vite 日志，DevTools 快照可呈现错误原因。
-- unsupported Next 命名按当前实现产生 warning，并跳过其 Next 专属语义。
+- 未注册的保留文件名和特殊目录按当前实现产生 warning，并跳过，不生成路由节点。
 - 修复错误后重新扫描，重新生成路由和声明文件。
 
 ## 开发期变更和刷新

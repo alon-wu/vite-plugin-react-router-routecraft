@@ -10,7 +10,7 @@ describe("目录段语法", () => {
     });
   });
 
-  it("将 Next.js 风格单参数目录映射为 React Router 参数段", () => {
+  it("将方括号单参数目录映射为 React Router 参数段", () => {
     expect(parseDirectorySegment("[projectId]")).toEqual({
       kind: "dynamic",
       name: "projectId",

@@ -105,11 +105,11 @@ function scanChildren(
     }
 
     const childPath = join(directory, entry.name);
-    if (isUnsupportedNextDirectory(entry.name)) {
+    if (isUnsupportedRouteDirectory(entry.name)) {
       diagnostics.push({
-        code: "RC_UNSUPPORTED_NEXT_CONVENTION",
+        code: "RC_UNSUPPORTED_ROUTE_CONVENTION",
         level: "warning",
-        message: `目录“${entry.name}”使用 Next.js Parallel/Intercepting Route 约定；Routecraft 不模拟该运行时语义。`,
+        message: `目录“${entry.name}”使用了 Routecraft 当前不支持的目录约定；该目录不会生成路由。`,
         file: relative(rootPath, childPath).split("\\").join("/"),
       });
       continue;
@@ -159,7 +159,7 @@ function scanChildren(
   return children;
 }
 
-function isUnsupportedNextDirectory(name: string): boolean {
+function isUnsupportedRouteDirectory(name: string): boolean {
   return name.startsWith("@") || /^\(\.{1,3}\)/u.test(name);
 }
 
@@ -182,9 +182,9 @@ function scanFiles(
       const baseName = entry.name.replace(/\.[^.]+$/u, "");
       if (unsupportedConventions.has(baseName)) {
         diagnostics.push({
-          code: "RC_UNSUPPORTED_NEXT_CONVENTION",
+          code: "RC_UNSUPPORTED_ROUTE_CONVENTION",
           level: "warning",
-          message: `“${entry.name}”是 Next.js 风格约定文件；Routecraft 不模拟其运行时语义。`,
+          message: `“${entry.name}”使用了 Routecraft 当前不支持的文件约定；该文件不会生成路由功能。`,
           file: relative(rootPath, join(directory, entry.name)).split("\\").join("/"),
         });
       }
@@ -194,9 +194,9 @@ function scanFiles(
     const stem = entry.name.slice(0, -extension.length);
     if (unsupportedConventions.has(stem)) {
       diagnostics.push({
-        code: "RC_UNSUPPORTED_NEXT_CONVENTION",
+        code: "RC_UNSUPPORTED_ROUTE_CONVENTION",
         level: "warning",
-        message: `“${entry.name}”是 Next.js 风格约定文件；Routecraft 不模拟其运行时语义。`,
+        message: `“${entry.name}”使用了 Routecraft 当前不支持的文件约定；该文件不会生成路由功能。`,
         file: relative(rootPath, join(directory, entry.name)).split("\\").join("/"),
       });
       continue;

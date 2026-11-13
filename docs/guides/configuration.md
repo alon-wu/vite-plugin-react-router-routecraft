@@ -61,7 +61,7 @@ Routecraft 本身设置 `enforce: "pre"`。应用仍需按 Vite/React 的正常�
 
 - 路由根目录不存在、特殊文件导出缺失、配置语法无效或公开 URL 冲突：生成错误诊断；生产构建失败，不输出有效外观的部分路由表。
 - `route.config.ts` 只读取静态对象字面量，不执行配置模块。
-- Next 风格但不支持的 `loading.tsx`、`template.tsx`、`route.tsx` 等会产生警告；并不会悄悄获得 Next.js 运行语义。
+- `loading.tsx`、`template.tsx`、`route.tsx`、`default.tsx` 等未实现的约定名称会产生警告并被跳过，不会自动转换为其他功能。
 - 支持项和“不支持”边界以[目录规则表](/guides/routing-conventions#routecraft-当前实现规则)为准。
 
 ## 当前 peer 范围

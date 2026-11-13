@@ -8,7 +8,7 @@
 
 ## 特性
 
-- Next.js App Router 风格的目录与 `page.tsx`、`layout.tsx` 约定，但仅实现可对应到 React Router Data Mode 的语义；
+- 以目录表达路由层级，并通过 `page.tsx`、`layout.tsx` 等 Routecraft 约定文件生成路由对象；
 - 路由组 `(group)`、私有目录 `_private`、`[param]` 动态段及末尾 `[...parts]` splat；
 - 多分支、多布局；不同 route group 可各自拥有 layout；
 - 组件、loader、action、错误边界与 hydration fallback 逐属性选择 eager/lazy；
@@ -21,6 +21,7 @@
 - [灵机一动：项目起点与原始设计方案](docs/design/routecraft-design.md)
 - [配置指南](docs/guides/configuration.md)
 - [目录路由约定](docs/guides/routing-conventions.md)
+- [AI 编码助手](docs/guides/ai-assistants.md)
 - [DevTools 指南](docs/guides/devtools.md)
 
 ## 试用示例
@@ -92,10 +93,10 @@ npm run pack:check
 ## 已知边界
 
 - `loading.tsx` 不会自动建立导航 loading UI；应用可用 React Router 的 `useNavigation()` 实现。
-- `hydrate-fallback.tsx` 只用于 React Router 初始 hydration fallback，不等于 Next.js `loading.tsx`。
+- `hydrate-fallback.tsx` 映射为 React Router 的 `HydrateFallback`，用于 hydration fallback；它不是应用内导航状态组件。
 - 根 `middleware.ts` 位于共同合成路由根，影响所有分支。middleware 不是服务端安全边界。
-- `[...parts]` 使用 React Router splat 的 `params["*"]` 字符串语义，不等价于 Next.js catch-all 字符串数组；`[[...parts]]` 不支持。
-- 不提供 Next.js Server Components、Server Actions、HTTP Route Handler、Parallel/Intercepting Routes、Next metadata 或 Framework Mode typegen。
+- `[...parts]` 映射为 React Router splat，参数通过 `params["*"]` 获取；`[[...parts]]` 不支持。
+- 不提供服务端组件、服务端操作、HTTP 请求处理器、并行/拦截式路由、框架级 metadata 或 Framework Mode typegen。
 - `useLoaderData()` 的业务返回值类型不做跨文件自动推导。
 
 详见[目录规则与语义边界](docs/guides/routing-conventions.md)。
