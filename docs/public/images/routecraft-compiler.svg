@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="430" viewBox="0 0 1120 430" role="img" aria-labelledby="title desc">
+  <title id="title">Routecraft 编译器模块图</title>
+  <desc id="desc">配置、目录扫描、路径解析、配置与导出分析汇入 buildRouteTree，产生 Route IR 和诊断，再由对象编译、类型生成和 DevTools 数据模块分别消费。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#63758c"/></marker>
+    <style>
+      .title{font:700 23px system-ui,sans-serif;fill:#172b4d}
+      .label{font:700 15px system-ui,sans-serif;fill:#172b4d}
+      .small{font:13px system-ui,sans-serif;fill:#42526e}
+      .box{stroke-width:1.5;rx:12}
+      .flow{stroke:#63758c;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1120" height="430" rx="22" fill="#f6f8fb"/>
+  <text x="34" y="46" class="title">Route IR 是编译与诊断的共同数据源</text>
+  <rect x="35" y="112" width="190" height="90" class="box" fill="#e9efff" stroke="#8da8f0"/>
+  <text x="58" y="148" class="label">Vite Options</text><text x="58" y="176" class="small">root / routesDir / typesDir</text>
+  <rect x="280" y="78" width="205" height="85" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="302" y="112" class="label">scanner.ts</text><text x="302" y="139" class="small">有序目录文件快照</text>
+  <rect x="280" y="195" width="205" height="85" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="302" y="229" class="label">segments.ts</text><text x="302" y="256" class="small">path / group / param</text>
+  <rect x="280" y="312" width="205" height="85" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="302" y="346" class="label">config.ts + exports.ts</text><text x="302" y="373" class="small">静态读取与导出检查</text>
+  <rect x="555" y="137" width="225" height="155" class="box" fill="#fff2d8" stroke="#e8bd65"/>
+  <text x="580" y="178" class="label">route-tree.ts</text>
+  <text x="580" y="208" class="small">构造父子节点与模块映射</text>
+  <text x="580" y="234" class="small">检测路径冲突 / 悬空文件</text>
+  <text x="580" y="266" class="label">Route IR + diagnostics</text>
+  <rect x="850" y="74" width="235" height="80" class="box" fill="#e9efff" stroke="#8da8f0"/>
+  <text x="874" y="108" class="label">compile-routes.ts</text><text x="874" y="134" class="small">虚拟 RouteObject 模块</text>
+  <rect x="850" y="176" width="235" height="80" class="box" fill="#f1eaff" stroke="#b89be3"/>
+  <text x="874" y="210" class="label">generate-types.ts</text><text x="874" y="236" class="small">typed-router.d.ts</text>
+  <rect x="850" y="278" width="235" height="80" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="874" y="312" class="label">devtools/data.ts</text><text x="874" y="338" class="small">安全化元数据快照</text>
+  <path d="M225 157H270" class="flow"/>
+  <path d="M485 121C518 121 522 175 548 184" class="flow"/>
+  <path d="M485 237H548" class="flow"/>
+  <path d="M485 354C518 354 522 254 548 244" class="flow"/>
+  <path d="M780 173C810 173 816 114 842 114" class="flow"/>
+  <path d="M780 214H842" class="flow"/>
+  <path d="M780 254C810 254 816 318 842 318" class="flow"/>
+  <text x="36" y="416" class="small">各输出只消费同一份 IR，不再各自重新解释文件系统。</text>
+</svg>

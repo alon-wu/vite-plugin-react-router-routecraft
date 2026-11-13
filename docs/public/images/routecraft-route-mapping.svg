@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="470" viewBox="0 0 1120 470" role="img" aria-labelledby="title desc">
+  <title id="title">目录规则到 React Router Route Object 映射图</title>
+  <desc id="desc">Route group 生成无 path 的父路由，workspace 目录生成 path segment route 并承载布局，page 文件生成 index child route，projects 动态目录生成 projectId 参数路由。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#63758c"/></marker>
+    <style>
+      .title{font:700 23px system-ui,sans-serif;fill:#172b4d}
+      .label{font:700 15px system-ui,sans-serif;fill:#172b4d}
+      .small{font:13px system-ui,sans-serif;fill:#42526e}
+      .code{font:13px ui-monospace,monospace;fill:#263750}
+      .box{stroke-width:1.5;rx:12}
+      .flow{stroke:#63758c;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1120" height="470" rx="22" fill="#f6f8fb"/>
+  <text x="35" y="47" class="title">文件层级和 React Router 的对象层级一一对应</text>
+  <text x="58" y="91" class="label">Routecraft 路由目录</text>
+  <text x="642" y="91" class="label">React Router Route Object</text>
+  <rect x="45" y="119" width="420" height="75" class="box" fill="#f1eaff" stroke="#b89be3"/>
+  <text x="68" y="151" class="code">routes/(workspace)/</text><text x="68" y="177" class="small">分组名不进入 URL，形成 pathless 边界</text>
+  <rect x="45" y="220" width="420" height="75" class="box" fill="#e9efff" stroke="#8da8f0"/>
+  <text x="68" y="252" class="code">workspace/layout.tsx</text><text x="68" y="278" class="small">目录段 + 同目录布局组件</text>
+  <rect x="45" y="321" width="420" height="75" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="68" y="353" class="code">workspace/projects/[projectId]/page.tsx</text><text x="68" y="379" class="small">静态段 + 动态段 + 页面入口</text>
+  <rect x="630" y="119" width="445" height="75" class="box" fill="#f1eaff" stroke="#b89be3"/>
+  <text x="656" y="151" class="code">{ id, children }  // no path</text><text x="656" y="177" class="small">URL 不增加 workspace group 段</text>
+  <rect x="630" y="220" width="445" height="75" class="box" fill="#e9efff" stroke="#8da8f0"/>
+  <text x="656" y="251" class="code">{ path: "workspace", Component, children }</text><text x="656" y="278" class="small">布局 Component 应通过 &lt;Outlet /&gt; 渲染子路由</text>
+  <rect x="630" y="321" width="445" height="75" class="box" fill="#e7f6ef" stroke="#75c69a"/>
+  <text x="656" y="352" class="code">{ path: "projects", children: [{ path: ":projectId",</text>
+  <text x="656" y="378" class="code">  children: [{ index: true, Component }] }] }</text>
+  <path d="M465 156H622" class="flow"/>
+  <path d="M465 257H622" class="flow"/>
+  <path d="M465 358H622" class="flow"/>
+  <rect x="236" y="419" width="658" height="34" rx="17" fill="#ffffff" stroke="#c7d1df"/>
+  <text x="267" y="442" class="small">最终页面 URL：/workspace/projects/:projectId · route group 从 URL 中消失</text>
+</svg>

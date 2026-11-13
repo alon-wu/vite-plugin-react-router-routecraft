@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/alon-wu/vite-plugin-react-router-routecraft.git"
   },
-  "homepage": "https://github.com/alon-wu/vite-plugin-react-router-routecraft#readme",
+  "homepage": "https://alon-wu.github.io/vite-plugin-react-router-routecraft/",
   "bugs": {
     "url": "https://github.com/alon-wu/vite-plugin-react-router-routecraft/issues"
   },
@@ -27,8 +27,7 @@
   },
   "files": [
     "dist",
-    "docs/design",
-    "docs/guides",
+    "docs",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -53,6 +52,9 @@
     "test:pack": "node scripts/package-smoke.mjs",
     "test:pack:min": "node scripts/package-smoke.mjs --minimum-peers",
     "verify": "npm run typecheck && npm run test:coverage && npm run build && npm run example:build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "pack:check": "npm pack --dry-run",
     "example:typecheck": "npm --prefix examples/basic run typecheck",
     "example:build": "npm --prefix examples/basic run build",
@@ -70,6 +72,7 @@
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^5.1.0",
     "vite": "^7.0.0",
+    "vitepress": "^1.6.4",
     "vitest": "^5.1.0"
   }
 }

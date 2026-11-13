@@ -4,6 +4,7 @@ dist/
 coverage/
 .vite/
 *.tsbuildinfo
+docs/.vitepress/cache/
 
 # 本地环境变量与密钥
 .env

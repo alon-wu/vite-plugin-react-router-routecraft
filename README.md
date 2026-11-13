@@ -4,6 +4,8 @@
 
 > 当前代码处于发布前验证状态，尚未发布 npm。请先使用随项目提供的示例应用试用，再在目标项目检查 React Router 与 Vite 版本兼容性。Routecraft 不实现 React Router Framework Mode，也不提供服务端鉴权或数据运行时。
 
+**文档站：**[Routecraft 文档](https://alon-wu.github.io/vite-plugin-react-router-routecraft/) · [完整示例](https://alon-wu.github.io/vite-plugin-react-router-routecraft/examples/complete-app) · [架构设计](https://alon-wu.github.io/vite-plugin-react-router-routecraft/architecture/)
+
 ## 特性
 
 - Next.js App Router 风格的目录与 `page.tsx`、`layout.tsx` 约定，但仅实现可对应到 React Router Data Mode 的语义；
@@ -14,16 +16,16 @@
 - 生成 `typed-router.d.ts`，声明路由 ID、URL 参数及类型化 `href` 辅助；
 - 可关闭的开发期路由树、加载方式和诊断 UI。
 
-## 设计与指南
+## 仓库内文档
 
-- [完整设计方案](docs/design/routecraft-design.md)
+- [灵机一动：项目起点与原始设计方案](docs/design/routecraft-design.md)
 - [配置指南](docs/guides/configuration.md)
 - [目录路由约定](docs/guides/routing-conventions.md)
 - [DevTools 指南](docs/guides/devtools.md)
 
 ## 试用示例
 
-示例位于 [`examples/basic`](examples/basic)，覆盖根页面、全局 middleware、认证/工作区双布局、动态参数、可选 loader、错误边界、HydrateFallback 与逐字段 lazy。
+仓库中的 `examples/basic` 是用于插件自动化验证的精简夹具，不是完整产品教程。完整、具体的应用级示例请阅读[项目管理台完整示例](https://alon-wu.github.io/vite-plugin-react-router-routecraft/examples/complete-app)。
 
 当前插件未发布，先构建本地包，再安装示例依赖：
 

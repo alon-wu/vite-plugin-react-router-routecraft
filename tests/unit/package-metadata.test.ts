@@ -16,6 +16,11 @@ const packageJson = JSON.parse(
   scripts: Record<string, string>;
   peerDependencies: Record<string, string>;
 };
+const npmIgnore = readFileSync(resolve(import.meta.dirname, "../../.npmignore"), "utf8");
+const docsNpmIgnore = readFileSync(
+  resolve(import.meta.dirname, "../../docs/.npmignore"),
+  "utf8",
+);
 
 describe("发布元数据", () => {
   it("声明 ESM 包入口、类型入口和 Node.js 运行基线", () => {
@@ -26,7 +31,7 @@ describe("发布元数据", () => {
       url: "https://github.com/alon-wu/vite-plugin-react-router-routecraft.git",
     });
     expect(packageJson.homepage).toBe(
-      "https://github.com/alon-wu/vite-plugin-react-router-routecraft#readme",
+      "https://alon-wu.github.io/vite-plugin-react-router-routecraft/",
     );
     expect(packageJson.bugs.url).toBe(
       "https://github.com/alon-wu/vite-plugin-react-router-routecraft/issues",
@@ -47,9 +52,10 @@ describe("发布元数据", () => {
     expect(packageJson.peerDependencies["react-router"]).toBe("^8.5.1");
   });
 
-  it("不把仅供开发执行的实现计划放入发布包", () => {
-    expect(packageJson.files).toContain("docs/design");
-    expect(packageJson.files).toContain("docs/guides");
-    expect(packageJson.files).not.toContain("docs");
+  it("发布正式 Markdown 文档，但排除站点配置和内部实施计划", () => {
+    expect(packageJson.files).toContain("docs");
+    expect(docsNpmIgnore).toContain(".vitepress/");
+    expect(docsNpmIgnore).toContain("superpowers/");
+    expect(npmIgnore).not.toContain("docs/.vitepress/");
   });
 });

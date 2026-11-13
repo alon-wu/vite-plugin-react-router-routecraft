@@ -1,18 +1,8 @@
-# Routecraft 配置指南
+# 配置参考
 
-## 安装与版本要求
+Routecraft 通过 `routecraft(options)` 创建 Vite 插件实例。当前公开选项由 [`src/types.ts`](https://github.com/alon-wu/vite-plugin-react-router-routecraft/blob/main/src/types.ts) 定义，并由 `src/vite/options.ts` 解析。
 
-Routecraft 面向 React Router 8 Data Mode 和 Vite 7+，要求 Node.js 22.22.0 或更高版本。使用时，宿主项目需要安装 Vite、React、React DOM 和 React Router；插件不替代它们。
-
-```sh
-npm install react react-dom react-router
-npm install -D vite @vitejs/plugin-react typescript
-npm install -D vite-plugin-react-router-routecraft
-```
-
-发布前阶段可在本地项目使用 `file:` 依赖指向 Routecraft 项目目录；见 `examples/basic/package.json`。
-
-## Vite 配置
+## 完整配置
 
 ```ts
 import { defineConfig } from "vite";
@@ -26,36 +16,66 @@ export default defineConfig({
       routesDir: "src/routes",
       typesDir: "src/types",
       defaultLazy: true,
-      devTools: true,
+      devTools: false,
     }),
   ],
 });
 ```
 
-| 选项 | 类型 | 默认值 | 说明 |
+## 选项表
+
+| 选项 | 类型 | 默认值 | 实际作用 |
 | --- | --- | --- | --- |
-| `routesDir` | `string` | `src/routes` | 相对于 Vite 项目根目录的目录路由根 |
-| `typesDir` | `string` | `src/types` | `typed-router.d.ts` 输出目录 |
-| `defaultLazy` | `boolean` | `true` | 约定模块未覆盖时的默认逐属性加载策略 |
-| `devTools` | `boolean` | `false` | 是否启用仅开发期的独立检查页面 |
+| `routesDir` | `string` | `"src/routes"` | 路由扫描根目录；相对路径以 Vite `root` 为基准，也接受绝对路径。目录不存在时产生错误诊断。 |
+| `typesDir` | `string` | `"src/types"` | `typed-router.d.ts` 输出目录；相对路径以 Vite `root` 为基准，插件会递归创建目录。 |
+| `defaultLazy` | `boolean` | `true` | 尚未在当前目录 `route.config.ts` 覆盖的每个路由模块属性的默认值。 |
+| `devTools` | `boolean` | `false` | 是否注册开发期 `/__routecraft` HTML 页和 `/__routecraft/data` JSON 端点。 |
 
-路径可传绝对路径或相对 Vite 根目录的路径。路由根目录必须存在；类型输出目录会自动创建。
+### `routesDir`
 
-## 应用路由入口
+扫描根目录的根约定文件可包括 `middleware.ts`、`hydrate-fallback.tsx`、`page.tsx` 和 `not-found.tsx`。具体识别规则见[目录与文件约定](/guides/routing-conventions)。点开头和下划线开头的子目录会被跳过；生成的 `.d.ts` 也不会参与路由识别。
+
+### `typesDir`
+
+输出文件固定命名为 `typed-router.d.ts`，不能通过选项修改文件名。生成使用内容比对和临时文件重命名，只有内容变化时才覆盖目标文件。若输出目录位于路由目录内部，扫描器仍忽略声明文件，但建议将声明放在路由实现目录之外以保持项目清晰。
+
+### `defaultLazy`
+
+默认值是 `true`。该选项不是一个只能整页切换的二选一：`route.config.ts` 可以分别覆盖布局、页面、loader、action 等实现属性。不存在的模块不会生成虚假的 Route Object 属性。详见[Lazy、loader 与 action](/guides/lazy-and-data)。
+
+### `devTools`
+
+默认为关闭。打开后 DevTools 只通过 Vite `configureServer` 开发服务器中间件提供；插件不会将工具页面、API 或专用浏览器客户端加入生产构建。
+
+## Vite 插件顺序
+
+现有示例将官方 `@vitejs/plugin-react` 放在 Routecraft 之前：
 
 ```ts
-import { createBrowserRouter } from "react-router";
-import { routeObjects } from "virtual:routecraft/routes";
-
-export const router = createBrowserRouter(routeObjects);
+plugins: [react(), routecraft({ devTools: true })]
 ```
 
-`virtual:routecraft/routes` 是由 Routecraft Vite 插件提供的虚拟 ESM 模块，不是独立 npm 包。插件会将其编译为扫描结果对应的 RouteObject 数组。必须通过 Vite 执行构建或开发服务器，单独使用 Node.js 原生解析器不会识别该模块。
-
-## 类型声明
-
-插件写入 `<typesDir>/typed-router.d.ts`。确认 `tsconfig.json` 的 `include` 覆盖该目录；生成文件可纳入版本控制，但不要手工编辑。路由目录变化时，Vite 会重写该声明。
+Routecraft 本身设置 `enforce: "pre"`。应用仍需按 Vite/React 的正常方式配置 JSX 转换、依赖和其他插件。
 
 ## 错误行为
 
-配置无效、导出缺失或公开 URL 冲突会产生含稳定诊断码的错误。开发期错误显示在 Vite 诊断/DevTools 中；生产构建失败，不生成貌似有效的部分路由树。修复错误后再次构建即可重新生成。
+- 路由根目录不存在、特殊文件导出缺失、配置语法无效或公开 URL 冲突：生成错误诊断；生产构建失败，不输出有效外观的部分路由表。
+- `route.config.ts` 只读取静态对象字面量，不执行配置模块。
+- Next 风格但不支持的 `loading.tsx`、`template.tsx`、`route.tsx` 等会产生警告；并不会悄悄获得 Next.js 运行语义。
+- 支持项和“不支持”边界以[目录规则表](/guides/routing-conventions#routecraft-当前实现规则)为准。
+
+## 当前 peer 范围
+
+仓库 `package.json` 当前声明：
+
+```json
+{
+  "engines": { "node": ">=22.22.0" },
+  "peerDependencies": {
+    "vite": "^7.0.0",
+    "react-router": "^8.5.1"
+  }
+}
+```
+
+这是本仓库当前包元数据，不是对未来发布版本的承诺。安装前请核对所用 Routecraft 版本的实际 peer dependency。
