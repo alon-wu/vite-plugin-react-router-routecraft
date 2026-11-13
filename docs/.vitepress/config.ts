@@ -1,10 +1,13 @@
 import { defineConfig } from "vitepress";
 
+const siteBase = "/vite-plugin-react-router-routecraft/";
+
 export default defineConfig({
   title: "Routecraft",
   description: "Vite + React Router 文件路由插件的正式使用文档与架构说明",
   lang: "zh-CN",
-  base: "/vite-plugin-react-router-routecraft/",
+  base: siteBase,
+  head: [["link", { rel: "icon", type: "image/svg+xml", href: `${siteBase}favicon.svg` }]],
   cleanUrls: true,
   srcExclude: ["superpowers/**"],
   themeConfig: {
