@@ -4,6 +4,10 @@ import { buildRouteTree } from "../../src/core/route-tree.js";
 
 const exampleRoot = resolve(import.meta.dirname, "../../examples/basic/src/routes");
 
+function normalizePath(file: string | undefined): string {
+  return file?.replaceAll("\\", "/") ?? "";
+}
+
 describe("内置示例应用", () => {
   it("示例目录能编译出认证、工作区双布局及全局 middleware", () => {
     const result = buildRouteTree(exampleRoot, { defaultLazy: true });
@@ -23,12 +27,14 @@ describe("内置示例应用", () => {
       "routecraft:(auth)",
       "routecraft:(workspace)",
     ]);
-    expect(result.root.children[1]?.children[0]?.modules.Component?.file).toContain(
-      "(auth)/auth/layout.tsx",
+    const authLayout = normalizePath(
+      result.root.children[1]?.children[0]?.modules.Component?.file,
     );
-    expect(result.root.children[2]?.children[0]?.modules.Component?.file).toContain(
-      "(workspace)/workspace/layout.tsx",
+    const workspaceLayout = normalizePath(
+      result.root.children[2]?.children[0]?.modules.Component?.file,
     );
+    expect(authLayout).toContain("(auth)/auth/layout.tsx");
+    expect(workspaceLayout).toContain("(workspace)/workspace/layout.tsx");
   });
 
   it("示例同时覆盖 eager loader、lazy 页面和 hydration fallback", () => {
