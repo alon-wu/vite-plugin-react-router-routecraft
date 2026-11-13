@@ -11,6 +11,7 @@ import { generateTypedRouter } from "../core/generate-types.js";
 import { createHrefModuleSource } from "../core/route-paths.js";
 import type { RoutecraftOptions } from "../types.js";
 import { resolveRoutecraftOptions, type ResolvedRoutecraftOptions } from "./options.js";
+import { createRefreshCoordinator } from "./refresh-coordinator.js";
 import {
   DEVTOOLS_CLIENT_ID,
   HREF_MODULE_ID,
@@ -39,7 +40,7 @@ export default function routecraft(options: RoutecraftOptions = {}): Plugin {
   let devServer: ViteDevServer | undefined;
   let revision = 0;
 
-  const refresh = async (): Promise<PluginSnapshot> => {
+  const refreshSnapshot = async (): Promise<PluginSnapshot> => {
     if (!resolvedOptions) {
       throw new Error("Routecraft 尚未读取 Vite 的项目根目录。");
     }
@@ -85,6 +86,7 @@ export default function routecraft(options: RoutecraftOptions = {}): Plugin {
     revision += 1;
     return snapshot;
   };
+  const refresh = createRefreshCoordinator(refreshSnapshot);
 
   return {
     name: "vite-plugin-react-router-routecraft",
