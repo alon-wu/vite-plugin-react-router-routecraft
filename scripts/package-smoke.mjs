@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
+import { createRequire } from "node:module";
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -37,6 +38,7 @@ try {
   // Vite 插件在构建阶段生成路由类型声明，因此必须先构建再做独立类型检查。
   run(["run", "build"], consumerRoot);
   run(["run", "typecheck"], consumerRoot);
+  await lintGeneratedDeclarations(consumerRoot);
 
   const port = 4170 + Math.floor(Math.random() * 1000);
   devServer = spawn(
@@ -48,12 +50,28 @@ try {
   const snapshot = await readDevtoolsSnapshot(devServer, port);
   const rootRoute = snapshot.routes?.[0];
   const indexRoute = rootRoute?.children?.find((route) => route.kind === "index");
+  const usersRoute = rootRoute?.children?.find(
+    (route) => route.kind === "segment" && route.path === "/users",
+  );
+  const userRoute = usersRoute?.children?.find(
+    (route) => route.kind === "segment" && route.path === "/users/:userId",
+  );
+  const userIndexRoute = userRoute?.children?.find(
+    (route) => route.kind === "index",
+  );
+  const generatedTypes = await readFile(
+    join(consumerRoot, "src/types/typed-router.d.ts"),
+    "utf8",
+  );
   if (
     snapshot.status !== "ready" ||
-    snapshot.routeCount !== 2 ||
+    snapshot.routeCount !== 5 ||
     rootRoute?.kind !== "root" ||
     indexRoute?.path !== "/" ||
-    indexRoute.modules?.Component?.file !== "page.tsx"
+    indexRoute.modules?.Component?.file !== "page.tsx" ||
+    userIndexRoute?.path !== "/users/:userId" ||
+    !generatedTypes.includes('"/": Record<never, never>;') ||
+    generatedTypes.includes('"/": {};')
   ) {
     throw new Error(
       `打包安装后的 DevTools 快照不符合预期：${JSON.stringify(snapshot)}`,
@@ -101,6 +119,34 @@ function run(args, cwd) {
   }
 }
 
+async function lintGeneratedDeclarations(root) {
+  const consumerRequire = createRequire(join(root, "package.json"));
+  const { ESLint } = consumerRequire("eslint");
+  const parser = consumerRequire("@typescript-eslint/parser");
+  const typescriptEslint = consumerRequire("@typescript-eslint/eslint-plugin");
+  const eslint = new ESLint({
+    cwd: root,
+    overrideConfigFile: true,
+    overrideConfig: [
+      {
+        files: ["**/*.d.ts"],
+        languageOptions: { parser },
+        plugins: { "@typescript-eslint": typescriptEslint },
+        rules: { "@typescript-eslint/no-empty-object-type": "error" },
+      },
+    ],
+  });
+  const results = await eslint.lintFiles(["src/types/typed-router.d.ts"]);
+  const errors = results.flatMap((result) =>
+    result.messages.map(
+      (message) => `${result.filePath}: ${message.message} (${message.ruleId})`,
+    ),
+  );
+  if (errors.length > 0) {
+    throw new Error(`生成的类型声明未通过 ESLint：\n${errors.join("\n")}`);
+  }
+}
+
 async function writeConsumerFiles(root, tarball) {
   const files = new Map([
     [
@@ -124,6 +170,9 @@ async function writeConsumerFiles(root, tarball) {
             "@types/react": "^19.0.0",
             "@types/react-dom": "^19.0.0",
             "@vitejs/plugin-react": minimumPeers ? "5.0.0" : "^5.0.0",
+            "@typescript-eslint/eslint-plugin": "^8.0.0",
+            "@typescript-eslint/parser": "^8.0.0",
+            eslint: "^10.0.0",
             typescript: minimumPeers ? "5.9.3" : "^5.9.3",
             vite: minimumPeers ? "7.0.0" : "^7.0.0",
           },
@@ -188,6 +237,10 @@ async function writeConsumerFiles(root, tarball) {
       "export default function Home() { return <main>Package smoke test</main>; }\n",
     ],
     [
+      "src/routes/users/[userId]/page.tsx",
+      "export default function User() { return <main>User</main>; }\n",
+    ],
+    [
       "src/routecraft.type-contract.ts",
       [
         'import { href } from "virtual:routecraft";',
@@ -195,10 +248,17 @@ async function writeConsumerFiles(root, tarball) {
         "",
         'const path: RoutePath = "/";',
         "const url: string = href('/');",
+        'const userUrl: string = href("/users/:userId", { userId: "user-1" });',
         "// @ts-expect-error 未登记的路径必须被拒绝。",
         "href('/missing');",
+        "// @ts-expect-error 无参数路由不接受参数对象。",
+        'href("/", {});',
+        "// @ts-expect-error 动态路由必须提供参数对象。",
+        'href("/users/:userId");',
+        "// @ts-expect-error 动态路由必须提供正确的参数名。",
+        'href("/users/:userId", { id: "user-1" });',
         "",
-        "void [path, url];",
+        "void [path, url, userUrl];",
         "",
       ].join("\n"),
     ],

@@ -53,7 +53,7 @@ function formatParams(path: string): string {
       if (part === "*") return ["*"];
       return [];
     });
-  if (parameters.length === 0) return "{}";
+  if (parameters.length === 0) return "Record<never, never>";
   return `{ ${parameters
     .map((parameter) => `${JSON.stringify(parameter)}: string`)
     .join("; ")} }`;
