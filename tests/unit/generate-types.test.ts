@@ -252,12 +252,17 @@ describe("路由类型声明生成", () => {
 
 function getTypeDiagnostics(files: Map<string, string>): readonly ts.Diagnostic[] {
   const options: ts.CompilerOptions = {
+    isolatedModules: true,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
+    moduleDetection: ts.ModuleDetectionKind.Force,
     noEmit: true,
+    noUnusedLocals: true,
+    noUnusedParameters: true,
     skipLibCheck: false,
     strict: true,
     target: ts.ScriptTarget.ES2022,
+    verbatimModuleSyntax: true,
   };
   const host = ts.createCompilerHost(options);
   const originalFileExists = host.fileExists.bind(host);
