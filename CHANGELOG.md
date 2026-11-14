@@ -2,6 +2,10 @@
 
 本文件记录 Routecraft 的面向用户变更。
 
+## 0.1.1
+
+- 完善 AI 使用指南与 Skill 对已安装插件版本文档的定位说明，明确文档缺失或版本不匹配时的处理方式。
+
 ## 0.1.0
 
 - 实现 Routecraft 目录约定到 React Router Data Mode `RouteObject[]` 的编译。
