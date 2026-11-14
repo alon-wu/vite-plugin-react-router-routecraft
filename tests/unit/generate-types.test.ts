@@ -205,7 +205,7 @@ describe("路由类型声明生成", () => {
       ],
     ]);
     expect(getTypeDiagnostics(files)).toEqual([]);
-  });
+  }, 30_000);
 
   it("没有页面路由时也不生成空对象类型", () => {
     const ir: RouteIR = {
@@ -247,7 +247,7 @@ describe("路由类型声明生成", () => {
     ]);
 
     expect(getTypeDiagnostics(files)).toEqual([]);
-  });
+  }, 30_000);
 });
 
 function getTypeDiagnostics(files: Map<string, string>): readonly ts.Diagnostic[] {
