@@ -7,6 +7,7 @@ export function generateTypedRouter(ir: RouteIR): string {
   const paramEntries = routePaths
     .map((path) => `    ${JSON.stringify(path)}: ${formatParams(path)};`)
     .join("\n");
+  const routeParamMap = paramEntries || "    [path: string]: Record<string, never>;";
 
   return [
     "// Routecraft 自动生成的声明文件；请勿手工编辑。",
@@ -18,7 +19,7 @@ export function generateTypedRouter(ir: RouteIR): string {
     `  export type RoutePath = ${union(routePaths)};`,
     "",
     "  type RouteParamMap = {",
-    paramEntries,
+    routeParamMap,
     "  };",
     "  export type ParamsFor<P extends RoutePath> = RouteParamMap[P];",
     "}",
@@ -26,10 +27,14 @@ export function generateTypedRouter(ir: RouteIR): string {
     'declare module "virtual:routecraft" {',
     '  import type { ParamsFor, RoutePath } from "virtual:routecraft/routes";',
     "",
-    "  export function href<P extends RoutePath>(",
-    "    path: P,",
-    "    ...args: keyof ParamsFor<P> extends never ? [] : [params: ParamsFor<P>]",
-    "  ): string;",
+    "  type HrefArguments = RoutePath extends never",
+    "    ? [path: never]",
+    "    : {",
+    "        [P in RoutePath]: ParamsFor<P> extends Record<string, never>",
+    "          ? [path: P]",
+    "          : [path: P, params: ParamsFor<P>];",
+    "      }[RoutePath];",
+    "  export function href(...args: HrefArguments): string;",
     "}",
     "",
   ].join("\n");
@@ -53,7 +58,7 @@ function formatParams(path: string): string {
       if (part === "*") return ["*"];
       return [];
     });
-  if (parameters.length === 0) return "Record<never, never>";
+  if (parameters.length === 0) return "Record<string, never>";
   return `{ ${parameters
     .map((parameter) => `${JSON.stringify(parameter)}: string`)
     .join("; ")} }`;

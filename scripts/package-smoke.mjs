@@ -70,7 +70,7 @@ try {
     indexRoute?.path !== "/" ||
     indexRoute.modules?.Component?.file !== "page.tsx" ||
     userIndexRoute?.path !== "/users/:userId" ||
-    !generatedTypes.includes('"/": Record<never, never>;') ||
+    !generatedTypes.includes('"/": Record<string, never>;') ||
     generatedTypes.includes('"/": {};')
   ) {
     throw new Error(
@@ -130,9 +130,16 @@ async function lintGeneratedDeclarations(root) {
     overrideConfig: [
       {
         files: ["**/*.d.ts"],
-        languageOptions: { parser },
+        languageOptions: {
+          parser,
+          parserOptions: { project: "./tsconfig.json", tsconfigRootDir: root },
+        },
         plugins: { "@typescript-eslint": typescriptEslint },
-        rules: { "@typescript-eslint/no-empty-object-type": "error" },
+        rules: {
+          ...typescriptEslint.configs.recommended.rules,
+          "@typescript-eslint/no-empty-object-type": "error",
+          "@typescript-eslint/no-generated-empty-object-type": "error",
+        },
       },
     ],
   });
@@ -167,6 +174,7 @@ async function writeConsumerFiles(root, tarball) {
             "react-router": minimumPeers ? "8.5.1" : "^8.5.1",
           },
           devDependencies: {
+            "@types/node": "^24.0.0",
             "@types/react": "^19.0.0",
             "@types/react-dom": "^19.0.0",
             "@vitejs/plugin-react": minimumPeers ? "5.0.0" : "^5.0.0",
@@ -204,13 +212,14 @@ async function writeConsumerFiles(root, tarball) {
         {
           compilerOptions: {
             target: "ES2022",
+            lib: ["ESNext", "DOM", "DOM.Iterable"],
             module: "ESNext",
             moduleResolution: "Bundler",
             strict: true,
-            skipLibCheck: true,
+            skipLibCheck: false,
             jsx: "react-jsx",
             noEmit: true,
-            types: ["vite/client"],
+            types: ["vite/client", "node"],
           },
           include: ["src", "vite.config.ts"],
         },
