@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-react-router-routecraft",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "面向 React Router Data Mode 的 Vite 文件路由插件",
   "type": "module",
   "repository": {

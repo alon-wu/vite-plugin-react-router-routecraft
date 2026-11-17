@@ -2,6 +2,13 @@
 
 本文件记录 Routecraft 的面向用户变更。
 
+## 0.1.3
+
+- 支持通过 `handle.ts`、`layout.handle.ts` 和 `not-found.handle.ts` 为页面、结构路由及根 404 路由提供路由元信息。
+- 支持分别配置页面 handle、结构路由 handle 和 404 handle 的 eager/lazy 加载方式。
+- 将 handle 元信息映射到生成的 React Router 数据路由对象，并在 DevTools 中展示来源文件和加载方式，但不泄露元信息实际值。
+- 增加 handle 的路由树、虚拟模块、Vite HMR、打包消费者、类型声明和示例项目验证。
+
 ## 0.1.2
 
 - 修复生成的路由类型声明中不符合 TypeScript 通用写法的问题，并增强声明文件的类型契约测试。
