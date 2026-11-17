@@ -104,3 +104,19 @@
 - 助手先核对项目当前安装版本，再从 `node_modules/vite-plugin-react-router-routecraft/docs/guides/` 读取随包文档。
 - 助手不要求用户另行克隆插件源码仓库，也不把文档站最新版默认当成与已安装版本一致。
 - 如果包管理器未提供直达路径，助手会先解析实际安装位置；若无法定位或文档缺失，会明确说明，不会假装已读取。
+
+### 8. 为页面、结构路由和 404 添加应用元信息（正向）
+
+**提示词**
+
+> 为首页、认证分组和 404 页面添加标题元信息。项目希望使用 `useMatches()` 根据当前匹配路由更新 document.title。认证分组没有 layout 组件。请先核对当前安装版本的 Routecraft 文档，再实现并说明加载配置。
+
+**通过条件**
+
+- 助手核对 Routecraft 版本和其实际文档，使用 `handle.ts`、`layout.handle.ts`、根 `not-found.handle.ts` 约定，并分别关联页面 index route、认证结构节点和根 not-found 节点。
+- 助手为应用定义自己的 `AppRouteHandle` 类型，并在 handle 模块中使用 `satisfies`；不要求 Routecraft 内建或推导业务 handle 字段。
+- 认证分组即使没有 `layout.tsx`，仍能通过 `layout.handle.ts` 为结构节点提供 handle。
+- 助手解释 `useMatches()` 只提供当前匹配链，handle 不会自动合并；document.title 的选择和更新逻辑由应用负责。
+- 对 `handle`、`layoutHandle`、`notFoundHandle` 分别配置 eager/lazy，不能假定它们跟页面组件或彼此绑定。
+- 没有把 handle 的业务值、title 解析、breadcrumb 合并、权限执行或 SEO 管理描述为插件行为。
+- 助手运行当前项目实际存在的类型检查与构建，并准确报告结果。

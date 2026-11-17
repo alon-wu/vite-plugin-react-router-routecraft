@@ -12,10 +12,14 @@ function createRoutesDirectory(): string {
   return root;
 }
 
-function addFile(root: string, relativePath: string): void {
+function addFile(
+  root: string,
+  relativePath: string,
+  source = "export default function Route() { return null; }\n",
+): void {
   const filePath = join(root, relativePath);
   mkdirSync(join(filePath, ".."), { recursive: true });
-  writeFileSync(filePath, "export default function Route() { return null; }\n");
+  writeFileSync(filePath, source);
 }
 
 afterEach(() => {
@@ -53,6 +57,52 @@ describe("路由目录扫描", () => {
       "RC_DUPLICATE_CONVENTION_FILE",
     );
   });
+
+  it("扫描页面、布局和 404 的 handle 约定文件", () => {
+    const root = createRoutesDirectory();
+    addFile(root, "handle.ts", "export const handle = { title: '首页' };\n");
+    addFile(root, "layout.handle.tsx", "export const handle = { title: '根布局' };\n");
+    addFile(root, "not-found.handle.ts", "export const handle = { title: '未找到' };\n");
+    addFile(root, "workspace/page.tsx");
+    addFile(root, "workspace/handle.tsx", "export const handle = { title: '工作区' };\n");
+    addFile(
+      root,
+      "workspace/layout.handle.ts",
+      "export const handle = { title: '工作区布局' };\n",
+    );
+
+    const result = scanRoutes(root);
+
+    expect(result.files).toEqual({
+      handle: join(root, "handle.ts"),
+      layoutHandle: join(root, "layout.handle.tsx"),
+      notFoundHandle: join(root, "not-found.handle.ts"),
+    });
+    expect(result.children[0]?.files).toEqual({
+      page: join(root, "workspace/page.tsx"),
+      handle: join(root, "workspace/handle.tsx"),
+      layoutHandle: join(root, "workspace/layout.handle.ts"),
+    });
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it.each(["handle", "layout.handle", "not-found.handle"])(
+    "同一目录的 %s.ts 与对应 TSX 文件同时存在时报告重复约定",
+    (stem) => {
+      const root = createRoutesDirectory();
+      addFile(root, `${stem}.ts`, "export const handle = {};\n");
+      addFile(root, `${stem}.tsx`, "export const handle = {};\n");
+
+      const result = scanRoutes(root);
+
+      expect(result.diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "RC_DUPLICATE_CONVENTION_FILE",
+          level: "error",
+        }),
+      );
+    },
+  );
 
   it("扫描器忽略声明生成物，避免类型文件触发路由", () => {
     const root = createRoutesDirectory();

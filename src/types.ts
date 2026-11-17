@@ -3,9 +3,12 @@ export interface RouteLazyConfig {
   layout?: boolean;
   layoutLoader?: boolean;
   layoutAction?: boolean;
+  layoutHandle?: boolean;
   page?: boolean;
   loader?: boolean;
   action?: boolean;
+  handle?: boolean;
+  notFoundHandle?: boolean;
   error?: boolean;
   hydrateFallback?: boolean;
 }

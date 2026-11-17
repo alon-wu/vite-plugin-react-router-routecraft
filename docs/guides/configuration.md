@@ -41,7 +41,34 @@ export default defineConfig({
 
 ### `defaultLazy`
 
-默认值是 `true`。该选项不是一个只能整页切换的二选一：`route.config.ts` 可以分别覆盖布局、页面、loader、action 等实现属性。不存在的模块不会生成虚假的 Route Object 属性。详见[Lazy、loader 与 action](/guides/lazy-and-data)。
+默认值是 `true`。该选项不是一个只能整页切换的二选一：`route.config.ts` 可以分别覆盖布局、页面、loader、action、handle 等实现属性。不存在的模块不会生成虚假的 Route Object 属性。详见[Lazy、loader 与 action](/guides/lazy-and-data)。
+
+### `route.config.ts` 中的 Handle 加载键
+
+`route.config.ts` 的 `lazy` 对象分别提供以下 handle 键；每项只影响当前目录中对应的 handle 模块，不随页面或布局组件的设置联动：
+
+| 配置键 | 对应文件 | Route Object 目标 |
+| --- | --- | --- |
+| `handle` | `handle.ts` / `handle.tsx` | 当前目录页面的 index route |
+| `layoutHandle` | `layout.handle.ts` / `layout.handle.tsx` | 当前目录结构 route，包括无 layout 组件的结构节点 |
+| `notFoundHandle` | 根 `not-found.handle.ts` / `.tsx` | 根 `path: "*"` not-found route |
+
+例如同目录页面组件可以 eager、页面 handle lazy，而同一树中另一节点的结构 handle 又可以独立设为 eager：
+
+```ts
+import type { RouteConfig } from "vite-plugin-react-router-routecraft";
+
+export default {
+  lazy: {
+    page: false,
+    handle: true,
+    layout: true,
+    layoutHandle: false,
+  },
+} satisfies RouteConfig;
+```
+
+键值仍须是直接布尔字面量。没有对应文件时不生成占位属性；插件只检查导出并负责挂载，不解析 handle 中的业务字段或值。Handle 文件与具体目标节点的限制见[目录与文件约定](/guides/routing-conventions#handle-元信息文件的目标节点)。
 
 ### `devTools`
 

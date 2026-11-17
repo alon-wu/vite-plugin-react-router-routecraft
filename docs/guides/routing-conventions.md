@@ -56,10 +56,47 @@ Routecraft 会将同一目录内的文件按职责放到对应的路由节点上
 | `action.ts` | 命名导出 `action`；需同目录页面 | 映射为页面索引路由的 `action`。 |
 | `layout.loader.ts` | 命名导出 `loader`；需同目录布局 | 映射为目录结构路由的 `loader`。 |
 | `layout.action.ts` | 命名导出 `action`；需同目录布局 | 映射为目录结构路由的 `action`。 |
+| `handle.ts` / `handle.tsx` | 命名导出 `handle`；需同目录页面 | 映射为页面索引路由的 `handle`。 |
+| `layout.handle.ts` / `layout.handle.tsx` | 命名导出 `handle` | 映射为当前目录结构路由的 `handle`；无需存在 `layout.tsx`。 |
+| 根目录 `not-found.handle.ts` / `.tsx` | 命名导出 `handle`；需根目录 `not-found.ts` / `.tsx` | 映射为根 `path: "*"` not-found 路由的 `handle`；仅允许放在路由根。 |
 | `middleware.ts` | 命名导出 `middleware` | 映射为当前结构路由的 `middleware` 数组，始终静态导入。 |
-| `route.config.ts` | 默认导出静态配置对象 | 调整当前目录受支持模块属性的 eager/lazy 方式；本身不生成路由属性。 |
+| `route.config.ts` | 默认导出静态配置对象 | 调整当前目录受支持模块属性（包括三类 handle）的 eager/lazy 方式；本身不生成路由属性。 |
 
 若约定组件文件或数据模块缺少必需导出、数据模块没有对应页面/布局、配置文件放置位置错误，Routecraft 会输出错误诊断。约定文件不能在同一目录重复出现 `.ts` 和 `.tsx` 两种版本。
+
+### Handle 元信息文件的目标节点
+
+handle 是应用提供给 React Router 的路由元信息。Routecraft 只识别文件、检查是否有命名导出 `handle`，并将这个导出挂到对应 Route Object；它不读取或解释 `title`、`breadcrumb` 等业务字段，也不会自动修改页面标题、合并父子 handle、执行权限判断或提供 SEO 管理。
+
+```text
+routes/
+├── page.tsx
+├── handle.ts                 → 根路径 index route.handle
+├── layout.handle.ts          → 共同根结构 route.handle
+├── (auth)/
+│   ├── layout.handle.ts      → pathless 分组结构 route.handle
+│   └── auth/
+│       └── sign-in/
+│           ├── page.tsx
+│           └── handle.ts     → /auth/sign-in 的 index route.handle
+├── not-found.tsx
+└── not-found.handle.ts       → 根 path: "*" 路由.handle
+```
+
+`handle.ts` 必须与 `page.ts` / `page.tsx` 共置，否则会报告孤立 handle；`layout.handle.ts` 可单独为有子路由的目录或 route group 提供结构元信息，不要求对应布局组件；根 `not-found.handle.ts` 必须与根 not-found 页面共置，且非根目录不支持该约定。三类文件都只接受命名导出 `handle`，类型导出不算运行时导出；对应约定同时存在 `.ts` 和 `.tsx` 时会报重复文件诊断。
+
+handle 文件不参与插件路径和 Route ID 的推导，也不生成页面。它只给已经确定的目标节点增加 `handle` 属性。应用可以自行定义业务契约并在模块中用 `satisfies` 校验，例如在 `src/routes/workspace/projects/handle.ts` 中：
+
+```ts
+import type { AppRouteHandle } from "../../../types/app-route-handle";
+
+export const handle = {
+  title: "项目详情",
+  breadcrumb: "项目",
+} satisfies AppRouteHandle;
+```
+
+若应用用 `useMatches()` 更新 document title，需由应用从当前匹配链中选择并使用相应 handle；`useMatches()` 不会把父子 handle 自动合并。懒加载的 handle 在其路由 lazy 模块加载前不应被当作完整的静态导航数据。加载策略分别由 `route.config.ts` 的 `handle`、`layoutHandle` 和 `notFoundHandle` 控制，详见[Lazy、loader 与 action](/guides/lazy-and-data)。
 
 ### 页面、布局与多分支
 
@@ -106,7 +143,7 @@ src/routes/
 `loader.ts`、`action.ts`、`layout.loader.ts` 和 `layout.action.ts` 都是可选的。文件不存在时，生成对象中不会出现对应属性，也不会创建空函数或占位导入。页面组件、布局、数据函数、错误边界和 hydration fallback 可分别选择 eager 或 lazy。
 
 - 插件选项 `defaultLazy`（默认 `true`）为未被目录配置覆盖的模块属性提供默认值。
-- 同目录 `route.config.ts` 的 `lazy` 对象可用 `true` / `false` 分别覆盖 `layout`、`layoutLoader`、`layoutAction`、`page`、`loader`、`action`、`error`、`hydrateFallback`。
+- 同目录 `route.config.ts` 的 `lazy` 对象可用 `true` / `false` 分别覆盖 `layout`、`layoutLoader`、`layoutAction`、`page`、`loader`、`action`、`handle`、`layoutHandle`、`notFoundHandle`、`error`、`hydrateFallback`。
 - 目录配置只影响该目录中实际存在的相应文件；不存在的模块不会产生属性。
 - `middleware.ts` 始终静态导入，不接受 lazy 配置。
 - 路由匹配需要的 `id`、`path`、`index` 和 `children` 保持在路由对象静态部分。

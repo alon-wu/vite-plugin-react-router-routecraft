@@ -15,9 +15,12 @@ const supportedKeys = new Set<keyof RouteLazyConfig>([
   "layout",
   "layoutLoader",
   "layoutAction",
+  "layoutHandle",
   "page",
   "loader",
   "action",
+  "handle",
+  "notFoundHandle",
   "error",
   "hydrateFallback",
 ]);

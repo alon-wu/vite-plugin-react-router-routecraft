@@ -48,6 +48,30 @@ describe("RouteObject 源码编译", () => {
     expect(code).not.toContain("lazy: async () =>");
   });
 
+  it("为 handle 单独生成 eager 或 lazy 属性", () => {
+    const root = createProject();
+    add(root, "page.tsx", "export default function Home() { return null; }");
+    add(root, "handle.ts", "export const handle = { title: '首页' };");
+    add(root, "projects/page.tsx", "export default function Projects() { return null; }");
+    add(root, "projects/handle.tsx", "export const handle = { title: '项目' };");
+    add(
+      root,
+      "projects/route.config.ts",
+      "export default { lazy: { page: false, handle: true } };",
+    );
+
+    const routeTree = buildRouteTree(root, { defaultLazy: false });
+    const code = compileRouteObjects(routeTree.root);
+
+    expect(code).toContain('handle: __routecraft_module_');
+    expect(code).toContain(
+      'handle: async () => (await import("'
+        + join(root, "projects/handle.tsx")
+        + '")).handle',
+    );
+    expect(code).toContain('Component: __routecraft_module_');
+  });
+
   it("将根 middleware 和不同路由分组布局放入不同 RouteObject", () => {
     const root = createProject();
     add(root, "middleware.ts", "export const middleware = async (_args, next) => next();");

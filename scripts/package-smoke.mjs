@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolveNpmInvocation } from "./npm-command.mjs";
 
 const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -39,6 +39,7 @@ try {
   run(["run", "build"], consumerRoot);
   run(["run", "typecheck"], consumerRoot);
   await lintGeneratedDeclarations(consumerRoot);
+  await assertPackagedRouteHandles(consumerRoot);
 
   const port = 4170 + Math.floor(Math.random() * 1000);
   devServer = spawn(
@@ -59,22 +60,60 @@ try {
   const userIndexRoute = userRoute?.children?.find(
     (route) => route.kind === "index",
   );
+  const notFoundRoute = rootRoute?.children?.find(
+    (route) => route.kind === "not-found",
+  );
   const generatedTypes = await readFile(
     join(consumerRoot, "src/types/typed-router.d.ts"),
     "utf8",
   );
-  if (
-    snapshot.status !== "ready" ||
-    snapshot.routeCount !== 5 ||
-    rootRoute?.kind !== "root" ||
-    indexRoute?.path !== "/" ||
-    indexRoute.modules?.Component?.file !== "page.tsx" ||
-    userIndexRoute?.path !== "/users/:userId" ||
-    !generatedTypes.includes('"/": Record<string, never>;') ||
-    generatedTypes.includes('"/": {};')
-  ) {
+  const violations = [];
+  if (snapshot.status !== "ready") violations.push("DevTools 状态不是 ready");
+  if (snapshot.routeCount !== 6) violations.push("路由节点数量不是 6");
+  if (rootRoute?.kind !== "root") violations.push("缺少共同根路由");
+  if (rootRoute.modules?.handle?.file !== "layout.handle.ts") {
+    violations.push("根结构 handle 来源不正确");
+  }
+  if (rootRoute.modules?.handle?.loading !== "eager") {
+    violations.push("根结构 handle 未按 eager 加载");
+  }
+  if (indexRoute?.path !== "/") violations.push("根页面路由路径不正确");
+  if (indexRoute.modules?.Component?.file !== "page.tsx") {
+    violations.push("根页面组件来源不正确");
+  }
+  if (indexRoute.modules?.handle?.file !== "handle.ts") {
+    violations.push("根页面 handle 来源不正确");
+  }
+  if (indexRoute.modules?.handle?.loading !== "lazy") {
+    violations.push("根页面 handle 未按 lazy 加载");
+  }
+  if (userIndexRoute?.path !== "/users/:userId") {
+    violations.push("动态用户页面路径不正确");
+  }
+  if (userIndexRoute.modules?.handle?.file !== "users/[userId]/handle.ts") {
+    violations.push("动态用户页面 handle 来源不正确");
+  }
+  if (userIndexRoute.modules?.handle?.loading !== "eager") {
+    violations.push("动态用户页面 handle 未按 eager 加载");
+  }
+  if (notFoundRoute?.modules?.handle?.file !== "not-found.handle.ts") {
+    violations.push("根 404 handle 来源不正确");
+  }
+  if (notFoundRoute.modules?.handle?.loading !== "eager") {
+    violations.push("根 404 handle 未按 eager 加载");
+  }
+  if (!generatedTypes.includes('"/": Record<string, never>;')) {
+    violations.push("生成声明缺少无参数根路径签名");
+  }
+  if (generatedTypes.includes('"/": {};')) {
+    violations.push("生成声明包含不合规的空对象类型");
+  }
+  if (violations.length > 0) {
     throw new Error(
-      `打包安装后的 DevTools 快照不符合预期：${JSON.stringify(snapshot)}`,
+      [
+        `打包安装后的消费者验证失败：${violations.join("；")}`,
+        `DevTools：${JSON.stringify(snapshot)}`,
+      ].join("\n"),
     );
   }
 
@@ -152,6 +191,73 @@ async function lintGeneratedDeclarations(root) {
   if (errors.length > 0) {
     throw new Error(`生成的类型声明未通过 ESLint：\n${errors.join("\n")}`);
   }
+}
+
+async function assertPackagedRouteHandles(root) {
+  const consumerRequire = createRequire(join(root, "package.json"));
+  const { createServer } = await import(
+    pathToFileURL(consumerRequire.resolve("vite"))
+  );
+  const pluginEntry = join(
+    root,
+    "node_modules",
+    packageManifest.name,
+    "dist/index.js",
+  );
+  const { default: routecraft } = await import(pathToFileURL(pluginEntry));
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: "silent",
+    optimizeDeps: { noDiscovery: true },
+    server: { middlewareMode: true },
+    plugins: [routecraft({ routesDir: "src/routes" })],
+  });
+
+  try {
+    const loaded = await server.ssrLoadModule("virtual:routecraft/routes");
+    const rootRoute = loaded.routeObjects?.[0];
+    const indexRoute = rootRoute?.children?.find((route) => route.index);
+    const usersRoute = rootRoute?.children?.find(
+      (route) => route.id === "routecraft:users" && route.path === "users",
+    );
+    const userRoute = usersRoute?.children?.find(
+      (route) =>
+        route.id === "routecraft:users:[userId]" && route.path === ":userId",
+    );
+    const userIndexRoute = userRoute?.children?.find((route) => route.index);
+    const notFoundRoute = rootRoute?.children?.find(
+      (route) => route.id === "routecraft:not-found",
+    );
+
+    assertHandle(
+      rootRoute?.handle?.title === "应用根",
+      "已安装包生成的根结构 handle eager 值不正确",
+    );
+    assertHandle(
+      typeof indexRoute?.lazy?.handle === "function",
+      "已安装包没有为首页生成 lazy handle 函数",
+    );
+    const lazyIndexHandle = await indexRoute.lazy.handle();
+    assertHandle(
+      lazyIndexHandle?.title === "首页",
+      "已安装包生成的首页 lazy handle 值不正确",
+    );
+    assertHandle(
+      userIndexRoute?.handle?.title === "用户",
+      "已安装包生成的动态页面 handle eager 值不正确",
+    );
+    assertHandle(
+      notFoundRoute?.handle?.title === "未找到",
+      "已安装包生成的根 404 handle eager 值不正确",
+    );
+  } finally {
+    await server.close();
+  }
+}
+
+function assertHandle(condition, message) {
+  if (!condition) throw new Error(message);
 }
 
 async function writeConsumerFiles(root, tarball) {
@@ -251,8 +357,36 @@ async function writeConsumerFiles(root, tarball) {
       "export default function Home() { return <main>Package smoke test</main>; }\n",
     ],
     [
+      "src/routes/layout.handle.ts",
+      "export const handle = { title: '应用根' };\n",
+    ],
+    [
+      "src/routes/handle.ts",
+      "export const handle = { title: '首页' };\n",
+    ],
+    [
+      "src/routes/route.config.ts",
+      "export default { lazy: { layoutHandle: false, handle: true, notFoundHandle: false } };\n",
+    ],
+    [
+      "src/routes/not-found.tsx",
+      "export default function NotFound() { return <main>Not found</main>; }\n",
+    ],
+    [
+      "src/routes/not-found.handle.ts",
+      "export const handle = { title: '未找到' };\n",
+    ],
+    [
       "src/routes/users/[userId]/page.tsx",
       "export default function User() { return <main>User</main>; }\n",
+    ],
+    [
+      "src/routes/users/[userId]/handle.ts",
+      "export const handle = { title: '用户' };\n",
+    ],
+    [
+      "src/routes/users/[userId]/route.config.ts",
+      "export default { lazy: { handle: false } };\n",
     ],
     [
       "src/routecraft.type-contract.ts",

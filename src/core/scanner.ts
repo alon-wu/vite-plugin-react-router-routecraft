@@ -20,6 +20,9 @@ export type RouteFileKey =
   | "action"
   | "layoutLoader"
   | "layoutAction"
+  | "handle"
+  | "layoutHandle"
+  | "notFoundHandle"
   | "middleware"
   | "config";
 
@@ -49,6 +52,9 @@ const typescriptConventions: Record<string, RouteFileKey> = {
   action: "action",
   "layout.loader": "layoutLoader",
   "layout.action": "layoutAction",
+  handle: "handle",
+  "layout.handle": "layoutHandle",
+  "not-found.handle": "notFoundHandle",
   middleware: "middleware",
   "route.config": "config",
 };

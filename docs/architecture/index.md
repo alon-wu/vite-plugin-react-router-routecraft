@@ -32,10 +32,13 @@ Routecraft 的目标是让实际运行的路由、TypeScript 看见的路由契�
 
 - `RouteNode` 包含节点 `id`、种类、来源目录、计算路径、可选 `path`/`index`、Route Object 属性映射与子节点。
 - `RouteModuleRef` 保留源码文件、需要的导出名、生成目标属性，以及该属性是否 lazy。
+- 页面、结构和 not-found 元信息都以普通 `RouteModuleRef` 表示：`handle.ts` 对应页面 index route，`layout.handle.ts` 对应目录结构 route，根 `not-found.handle.ts` 对应根 not-found route。
 - `MiddlewareModuleRef` 保存 middleware 源文件和 `middleware` 导出名；当前实现将 middleware 静态导入。
 - `RouteIR` 汇总共同根节点、生成的路由 ID、可访问页面路径和诊断。
 
 它不是 `RouteObject[]` 的简单复制：IR 还保留源路径及加载决定，便于类型输出与诊断。路由对象、类型信息、DevTools 都从这棵统一树读取，不应各自重新扫描目录。
+
+Routecraft 不在 IR 中解释 handle 的业务结构，也不运行或序列化其导出值。应用可自行定义 `AppRouteHandle` 并用 TypeScript `satisfies` 检查；例如标题更新、面包屑选择或权限判断都属于应用代码。
 
 ## 目录如何成为多布局路由树
 
@@ -53,11 +56,12 @@ Routecraft 为路由根产生共同的 pathless 根对象；`(auth)`、`(workspa
 
 - eager 模块被收集为静态 namespace import，其导出绑定到 route 对象字段。
 - lazy 模块不成为静态导入；其对应字段被放进 React Router `lazy` 函数返回的属性集合。
+- handle 按 IR 指定的节点和加载方式输出为 `handle` 或 `lazy.handle`；`handle`、`layoutHandle`、`notFoundHandle` 分别配置，不由组件的 lazy 设置推导。
 - 匹配所需的 `id`、`path`、`index`、`children` 直接写在 route 对象上。
 - 没有相应文件时 IR 不含模块引用，因此也不生成 loader/action 等空字段。
 - middleware 当前始终静态导入。
 
-加载选项定义于 `src/types.ts` 的 `RouteLazyConfig`，默认值在目录构树时由 `defaultLazy` 提供，`route.config.ts` 的静态字面量覆盖单个目录内的对应属性。详见 [Lazy、loader 与 action](/guides/lazy-and-data)。
+加载选项定义于 `src/types.ts` 的 `RouteLazyConfig`，默认值在目录构树时由 `defaultLazy` 提供，`route.config.ts` 的静态字面量覆盖单个目录内的对应属性。对应用而言，`useMatches()` 提供当前匹配链；Routecraft 不合并链上的 handle，也不负责 `document.title` 更新。详见 [Lazy、loader 与 action](/guides/lazy-and-data)。
 
 ## 类型输出与虚拟模块的分工
 

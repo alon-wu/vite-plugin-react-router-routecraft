@@ -50,6 +50,14 @@ describe("Vite 插件集成", () => {
 
   it("只在 devTools 开启时注册只读页面与数据端点", async () => {
     const root = createProject();
+    writeFileSync(
+      join(root, "src/routes/layout.handle.ts"),
+      "export const handle = { title: '根布局元信息' };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/handle.ts"),
+      "export const handle = { title: '首页元信息' };\n",
+    );
     const server = await createServer({
       configFile: false,
       root,
@@ -63,7 +71,11 @@ describe("Vite 插件集成", () => {
       const dataResponse = await requestMiddleware(server, "/__routecraft/data");
       const body = JSON.parse(dataResponse.body) as {
         status: string;
-        routes: Array<{ source: string }>;
+        routes: Array<{
+          source: string;
+          modules: Record<string, { file: string; loading: string }>;
+          children: Array<{ kind: string; modules: Record<string, { file: string; loading: string }> }>;
+        }>;
       };
 
       expect(htmlResponse.status).toBe(200);
@@ -72,7 +84,15 @@ describe("Vite 插件集成", () => {
       expect(htmlResponse.body).not.toContain('import "virtual:routecraft/devtools-client"');
       expect(dataResponse.status).toBe(200);
       expect(body.status).toBe("ready");
+      expect(body.routes[0]?.modules.handle).toEqual({
+        file: "layout.handle.ts",
+        loading: "lazy",
+      });
+      expect(body.routes[0]?.children.find((route) => route.kind === "index")?.modules.handle)
+        .toEqual({ file: "handle.ts", loading: "lazy" });
       expect(JSON.stringify(body)).not.toContain(root);
+      expect(JSON.stringify(body)).not.toContain("根布局元信息");
+      expect(JSON.stringify(body)).not.toContain("首页元信息");
     } finally {
       await server.close();
     }
@@ -249,6 +269,55 @@ describe("Vite 插件集成", () => {
     }
   });
 
+  it("handle 文件新增、修改和删除时刷新 DevTools 来源但不泄露元信息值", async () => {
+    const root = createProject();
+    const server = await createServer({
+      configFile: false,
+      root,
+      logLevel: "silent",
+      server: { middlewareMode: true },
+      plugins: [routecraft({ routesDir: "src/routes", typesDir: "src/types", devTools: true })],
+    });
+
+    try {
+      const pageDirectory = join(root, "src/routes/docs");
+      const pageFile = join(pageDirectory, "page.tsx");
+      const handleFile = join(pageDirectory, "handle.ts");
+      mkdirSync(pageDirectory, { recursive: true });
+      writeFileSync(pageFile, "export default function Docs() { return null; }\n");
+      await runHotUpdate(server, pageFile);
+
+      writeFileSync(
+        handleFile,
+        "export const handle = { title: 'secret-handle-value' };\n",
+      );
+      await runHotUpdate(server, handleFile);
+      const addedSnapshot = await getDevtoolsData(server);
+      expect(JSON.stringify(addedSnapshot)).toContain(
+        '"handle":{"file":"docs/handle.ts","loading":"lazy"}',
+      );
+      expect(JSON.stringify(addedSnapshot)).not.toContain("secret-handle-value");
+
+      writeFileSync(
+        handleFile,
+        "export const handle = { title: 'updated-secret-handle-value' };\n",
+      );
+      await runHotUpdate(server, handleFile);
+      const modifiedSnapshot = await getDevtoolsData(server);
+      expect(JSON.stringify(modifiedSnapshot)).not.toContain("updated-secret-handle-value");
+      expect(JSON.stringify(modifiedSnapshot)).toContain(
+        '"handle":{"file":"docs/handle.ts","loading":"lazy"}',
+      );
+
+      rmSync(handleFile);
+      await runHotUpdate(server, handleFile);
+      const deletedSnapshot = await getDevtoolsData(server);
+      expect(JSON.stringify(deletedSnapshot)).not.toContain("docs/handle.ts");
+    } finally {
+      await server.close();
+    }
+  });
+
   it("虚拟模块在运行时生成可由 React Router 匹配的多分支 RouteObject", async () => {
     const root = createProject();
     writeFileSync(
@@ -297,6 +366,106 @@ describe("Vite 插件集成", () => {
       );
       expect(module.routeObjects[0]?.middleware).toHaveLength(1);
       expect(module.routeObjects[0]?.children?.length).toBeGreaterThan(1);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("虚拟路由对象包含 eager handle，并可独立加载 lazy 页面 handle", async () => {
+    const root = createProject();
+    writeFileSync(
+      join(root, "src/routes/layout.handle.ts"),
+      "export const handle = { title: '根布局' };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/handle.ts"),
+      "export const handle = { title: '首页' };\n",
+    );
+    mkdirSync(join(root, "src/routes/docs"), { recursive: true });
+    writeFileSync(
+      join(root, "src/routes/docs/page.tsx"),
+      "export default function Docs() { return null; }\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/docs/handle.ts"),
+      "export const handle = { title: '文档' };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/docs/route.config.ts"),
+      "export default { lazy: { page: false, handle: true } };\n",
+    );
+    mkdirSync(join(root, "src/routes/admin"), { recursive: true });
+    writeFileSync(
+      join(root, "src/routes/admin/layout.handle.ts"),
+      "export const handle = { title: '管理结构' };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/admin/page.tsx"),
+      "export default function Admin() { return null; }\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/admin/route.config.ts"),
+      "export default { lazy: { layoutHandle: true } };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/not-found.tsx"),
+      "export default function NotFound() { return null; }\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/not-found.handle.ts"),
+      "export const handle = { title: '未找到' };\n",
+    );
+    writeFileSync(
+      join(root, "src/routes/route.config.ts"),
+      "export default { lazy: { notFoundHandle: true } };\n",
+    );
+    const server = await createServer({
+      configFile: false,
+      root,
+      logLevel: "silent",
+      server: { middlewareMode: true },
+      plugins: [routecraft({ defaultLazy: false })],
+    });
+
+    try {
+      const module = (await server.ssrLoadModule(
+        "virtual:routecraft/routes",
+      )) as { routeObjects: Parameters<typeof matchRoutes>[0] };
+      const rootRoute = module.routeObjects[0];
+      const homeRoute = rootRoute?.children?.find((route) => route.index);
+      const docsRoute = rootRoute?.children?.find((route) => route.path === "docs");
+      const docsPage = docsRoute?.children?.find((route) => route.index);
+      const adminRoute = rootRoute?.children?.find((route) => route.path === "admin");
+      const adminPage = adminRoute?.children?.find((route) => route.index);
+      const notFoundRoute = rootRoute?.children?.find((route) => route.path === "*");
+
+      expect(rootRoute?.handle).toEqual({ title: "根布局" });
+      expect(homeRoute?.handle).toEqual({ title: "首页" });
+      expect(docsPage?.Component).toBeTypeOf("function");
+      expect(docsPage?.handle).toBeUndefined();
+
+      const lazyHandle = docsPage?.lazy as
+        | { handle?: () => Promise<unknown> }
+        | undefined;
+      await expect(lazyHandle?.handle?.()).resolves.toEqual({ title: "文档" });
+
+      expect(adminRoute?.Component).toBeUndefined();
+      const lazyAdminHandle = adminRoute?.lazy as
+        | { handle?: () => Promise<unknown> }
+        | undefined;
+      await expect(lazyAdminHandle?.handle?.()).resolves.toEqual({ title: "管理结构" });
+      expect(adminPage?.index).toBe(true);
+
+      const lazyNotFoundHandle = notFoundRoute?.lazy as
+        | { handle?: () => Promise<unknown> }
+        | undefined;
+      await expect(lazyNotFoundHandle?.handle?.()).resolves.toEqual({ title: "未找到" });
+      expect(matchRoutes(module.routeObjects, "/docs")?.map((match) => match.route.id))
+        .toContain("routecraft:docs:index");
+      expect(matchRoutes(module.routeObjects, "/admin")?.map((match) => match.route.id))
+        .toContain("routecraft:admin");
+      expect(matchRoutes(module.routeObjects, "/missing")?.map((match) => match.route.id))
+        .toContain("routecraft:not-found");
     } finally {
       await server.close();
     }

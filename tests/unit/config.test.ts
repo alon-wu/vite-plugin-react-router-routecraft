@@ -6,7 +6,14 @@ describe("静态路由配置", () => {
     const result = parseRouteConfigSource(`
       import type { RouteConfig } from "vite-plugin-react-router-routecraft";
       export default {
-        lazy: { page: true, loader: false, hydrateFallback: true },
+        lazy: {
+          page: true,
+          loader: false,
+          hydrateFallback: true,
+          handle: false,
+          layoutHandle: true,
+          notFoundHandle: false,
+        },
       } satisfies RouteConfig;
     `);
 
@@ -14,6 +21,9 @@ describe("静态路由配置", () => {
       page: true,
       loader: false,
       hydrateFallback: true,
+      handle: false,
+      layoutHandle: true,
+      notFoundHandle: false,
     });
     expect(result.diagnostics).toEqual([]);
   });

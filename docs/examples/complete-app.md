@@ -1,6 +1,6 @@
 # 完整示例：团队项目管理台
 
-本示例围绕一个具体应用组织路由：产品首页和价格页、认证入口、工作区摘要、项目列表、新建项目 action、动态项目详情 loader。它明确展示多个独立布局分支、数据模块的可选性，以及**同一条路由内各属性分别采用 eager 或 lazy** 的方式。
+本示例围绕一个具体应用组织路由：产品首页和价格页、认证入口、工作区摘要、项目列表、新建项目 action、动态项目详情 loader。它明确展示多个独立布局分支、数据模块的可选性、**同一条路由内各属性分别采用 eager 或 lazy**，以及应用如何用自定义 `handle` 和 `useMatches()` 更新 `document.title`。
 
 示例使用本地演示数据，不冒充生产后端。登录和数据操作只演示 React Router Data Mode 的接法；真实应用必须由服务端实现持久化、会话和权限检查。
 
@@ -34,16 +34,25 @@ examples/complete-app/
     ├── style.css
     ├── types/
     │   └── typed-router.d.ts   # 插件生成，勿手改
+    ├── route-handle.ts         # 应用自己的 handle 类型和标题选择函数
     └── routes/
         ├── middleware.ts
         ├── hydrate-fallback.tsx
+        ├── layout.tsx          # 应用侧读取 useMatches 并更新 document.title
+        ├── route.config.ts     # notFoundHandle 的独立加载设置
         ├── not-found.tsx
+        ├── not-found.handle.ts
         ├── (public)/
         │   ├── layout.tsx
+        │   ├── layout.handle.ts
+        │   ├── handle.ts
+        │   ├── route.config.ts
         │   ├── page.tsx
         │   └── pricing/
         │       └── page.tsx
         ├── (auth)/
+        │   ├── layout.handle.ts # 无 layout 组件的 pathless group 元信息
+        │   ├── route.config.ts
         │   └── auth/
         │       ├── layout.tsx
         │       ├── sign-in/
@@ -55,8 +64,10 @@ examples/complete-app/
         └── (workspace)/
             └── workspace/
                 ├── layout.tsx
+                ├── layout.handle.ts
                 ├── layout.loader.ts
                 ├── route.config.ts
+                ├── handle.ts
                 ├── page.tsx
                 └── projects/
                     ├── page.tsx
@@ -508,8 +519,10 @@ import type { RouteConfig } from "vite-plugin-react-router-routecraft";
 export default {
   lazy: {
     layout: false,
+    layoutHandle: true,
     layoutLoader: false,
     page: true,
+    handle: false,
   },
 } satisfies RouteConfig;
 ```
@@ -842,7 +855,7 @@ export default function NotFoundPage() {
 
 | 源文件 | 生成属性/节点 | 本示例的加载方式 |
 | --- | --- | --- |
-| `(public)/layout.tsx` | pathless group 的 `Component` | 使用 `defaultLazy: true` 时 lazy |
+| `(public)/layout.tsx` | pathless group 的 `Component` | `route.config.ts` 显式 eager |
 | `(public)/page.tsx` | `/` 的 index route `Component` | lazy |
 | `pricing/page.tsx` | `/pricing` 下的 index `Component` | lazy |
 | `(auth)/auth/sign-in/page.tsx` | `/auth/sign-in` index `Component` | lazy |
@@ -855,20 +868,190 @@ export default function NotFoundPage() {
 | `projects/action.ts` | 同一 index route 的 `action` | lazy |
 | `[projectId]/page.tsx` | `:projectId` segment 下 index `Component` | lazy |
 | `[projectId]/loader.ts` | 动态页面 index route 的 `loader` | eager |
+| `(public)/handle.ts` | `/` 的 index route `handle` | 由 `route.config.ts` 独立设置 |
+| `(public)/layout.handle.ts` | public pathless group 结构 route 的 `handle` | 由 `route.config.ts` 独立设置 |
+| `(auth)/layout.handle.ts` | auth pathless group 结构 route 的 `handle`，该节点没有 `layout.tsx` 也成立 | lazy |
+| `workspace/handle.ts` | `/workspace` 下 index route 的 `handle` | eager |
+| `workspace/layout.handle.ts` | `/workspace` 结构 route 的 `handle` | lazy |
 | 根 `middleware.ts` | 共同根的 `middleware` 数组 | 始终静态导入 |
 | 根 `hydrate-fallback.tsx` | 共同根 `HydrateFallback` | 默认 lazy |
+| 根 `not-found.handle.ts` | 根 `path: "*"` not-found route 的 `handle` | 由根 `route.config.ts` 独立设置 |
+
+### 应用自定义 Handle 与动态页面标题
+
+Routecraft 不规定 handle 的业务形状。下面的 `AppRouteHandle` 由应用定义；每个 handle 文件用 `satisfies` 检查本地对象。`useMatches()` 返回当前 URL 的匹配链，应用函数从后向前选择最近一个包含标题的 handle，再由根布局通过 `useEffect` 写入 `document.title`。父子 handle 不会自动合并，标题计算和 DOM 更新也都不是 Routecraft 插件功能。
+
+`src/route-handle.ts`：
+
+```ts
+export interface AppRouteHandle {
+  title: string;
+  breadcrumb?: string;
+}
+
+export function getDocumentTitle(handles: readonly unknown[]): string {
+  const currentTitle = [...handles].reverse().find(isAppRouteHandle)?.title;
+  return currentTitle
+    ? `${currentTitle} | 栈桥 Studio`
+    : "栈桥 Studio";
+}
+
+function isAppRouteHandle(value: unknown): value is AppRouteHandle {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "title" in value &&
+    typeof value.title === "string" &&
+    value.title.trim().length > 0
+  );
+}
+```
+
+`src/routes/(public)/handle.ts`（同目录须有 `page.tsx`）：
+
+```ts
+import type { AppRouteHandle } from "../../route-handle";
+
+export const handle = {
+  title: "团队项目管理",
+  breadcrumb: "首页",
+} satisfies AppRouteHandle;
+```
+
+`src/routes/(public)/layout.handle.ts`（当前 pathless group 的结构元信息；与 public 组布局组件分开加载）：
+
+```ts
+import type { AppRouteHandle } from "../../route-handle";
+
+export const handle = {
+  title: "栈桥 Studio",
+  breadcrumb: "产品站点",
+} satisfies AppRouteHandle;
+```
+
+`src/routes/(auth)/layout.handle.ts`（对应 pathless group 结构节点；此目录没有 `layout.tsx`）：
+
+```ts
+import type { AppRouteHandle } from "../../route-handle";
+
+export const handle = {
+  title: "账户访问",
+  breadcrumb: "账户",
+} satisfies AppRouteHandle;
+```
+
+`src/routes/(workspace)/workspace/layout.handle.ts` 与 `handle.ts` 分别描述工作区结构节点和 `/workspace` 页面 index route：
+
+```ts
+// layout.handle.ts
+import type { AppRouteHandle } from "../../../route-handle";
+
+export const handle = {
+  title: "工作区",
+  breadcrumb: "工作区",
+} satisfies AppRouteHandle;
+
+// handle.ts
+import type { AppRouteHandle } from "../../../route-handle";
+
+export const handle = {
+  title: "工作区摘要",
+  breadcrumb: "概览",
+} satisfies AppRouteHandle;
+```
+
+`src/routes/not-found.handle.ts`（必须与根 `not-found.tsx` 共置）：
+
+```ts
+import type { AppRouteHandle } from "../route-handle";
+
+export const handle = {
+  title: "页面未找到",
+  breadcrumb: "404",
+} satisfies AppRouteHandle;
+```
+
+`src/routes/layout.tsx`：
+
+```tsx
+import { useEffect } from "react";
+import { Outlet, useMatches } from "react-router";
+import { getDocumentTitle } from "../route-handle";
+
+export default function RootLayout() {
+  const matches = useMatches();
+  const title = getDocumentTitle(matches.map((match) => match.handle));
+
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+
+  return <Outlet />;
+}
+```
+
+配置也按目标模块独立控制。以下根配置只控制 not-found 元信息；public 目录的配置可分别决定布局、页面和两类 handle 的加载策略：
+
+`src/routes/route.config.ts`：
+
+```ts
+import type { RouteConfig } from "vite-plugin-react-router-routecraft";
+
+export default {
+  lazy: { notFoundHandle: true },
+} satisfies RouteConfig;
+```
+
+`src/routes/(public)/route.config.ts`：
+
+```ts
+import type { RouteConfig } from "vite-plugin-react-router-routecraft";
+
+export default {
+  lazy: {
+    layout: false,
+    layoutHandle: true,
+    page: true,
+    handle: false,
+  },
+} satisfies RouteConfig;
+```
+
+`layout`、`layoutHandle`、`page`、`handle` 与 `notFoundHandle` 相互独立。`layout.handle.ts` 只代表结构路由元信息，不要求有布局组件；`handle.ts` 则需要同目录页面。`handle.ts`、`layout.handle.ts` 和 `not-found.handle.ts` 只接受命名导出 `handle`。插件不会读取这些对象的字段，也不会自动应用标题或面包屑逻辑。
 
 生成结果省略自动 ID 后，其核心形状如下；eager/lazy 的模块函数由 Vite 编译输出：
 
 ```ts
 [
   {
-    // 根 middleware 和 hydration fallback 挂在共同根
+    // 根布局负责应用自己的 useMatches() 标题逻辑；插件只挂载 route.handle
+    lazy: { Component: loadRootLayout, HydrateFallback: loadHydrationFallback },
     middleware: [rootMiddleware],
-    lazy: { HydrateFallback: loadHydrationFallback },
     children: [
       {
-        // route group 不带 path，保持自己的 layout 边界
+        // public pathless group：布局 eager、结构 handle lazy
+        Component: PublicLayout,
+        lazy: { handle: loadPublicLayoutHandle },
+        children: [
+          {
+            index: true,
+            handle: publicPageHandle,
+            lazy: { Component: loadHomePage },
+          },
+          {
+            path: "pricing",
+            children: [
+              {
+                index: true,
+                lazy: { Component: loadPricingPage },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        // auth pathless group 没有自己的 layout.tsx，仍可挂载结构 handle
+        lazy: { handle: loadAuthGroupHandle },
         children: [
           {
             path: "auth",
@@ -894,9 +1077,13 @@ export default function NotFoundPage() {
             path: "workspace",
             Component: WorkspaceLayout,
             loader: workspaceLayoutLoader,
+            lazy: {
+              handle: loadWorkspaceLayoutHandle,
+            },
             children: [
               {
                 index: true,
+                handle: workspacePageHandle,
                 lazy: { Component: loadWorkspacePage },
               },
               {
@@ -926,12 +1113,19 @@ export default function NotFoundPage() {
           },
         ],
       },
+      {
+        path: "*",
+        lazy: {
+          Component: loadNotFoundPage,
+          handle: loadNotFoundHandle,
+        },
+      },
     ],
   },
 ];
 ```
 
-这是表达映射关系的示意形状；Routecraft 实际还会为每个节点生成稳定 `id`，并按其编译规则生成静态 import 和 `lazy` 函数。不存在的 `loader`/`action` 不会加入对象。
+这是表达映射关系的示意形状；Routecraft 实际还会为每个节点生成稳定 `id`，并按其编译规则生成静态 import 和对象式 `lazy` 函数。上面为突出 handle 映射，省略了部分页面和元信息模块；不存在的模块不会加入对象。标题选择和 `document.title` 更新仅由前面的应用组件执行。
 
 ## 11. 运行和检查
 

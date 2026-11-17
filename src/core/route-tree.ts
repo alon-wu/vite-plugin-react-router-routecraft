@@ -41,10 +41,29 @@ export function buildRouteTree(
   };
 
   for (const directory of walkDirectories(scan)) {
+    if (directory.files.handle && !directory.files.page) {
+      diagnostics.push(
+        errorDiagnostic(
+          "RC_ORPHAN_ROUTE_HANDLE",
+          "handle.ts/handle.tsx 需要同目录的 page.ts 或 page.tsx。",
+          directory.files.handle,
+        ),
+      );
+    }
+    if (directory.files.notFoundHandle && directory.relativePath !== ".") {
+      diagnostics.push(
+        errorDiagnostic(
+          "RC_NOT_FOUND_ROOT_ONLY",
+          "not-found.handle.ts/not-found.handle.tsx 仅允许放在路由根目录。",
+          directory.files.notFoundHandle,
+        ),
+      );
+    }
     if (
       directory.files.config &&
       !directory.files.page &&
       !directory.files.layout &&
+      !directory.files.layoutHandle &&
       !directory.files.error &&
       !directory.files.hydrateFallback &&
       !directory.files.notFound
@@ -52,11 +71,20 @@ export function buildRouteTree(
       diagnostics.push(
         errorDiagnostic(
           "RC_ORPHAN_ROUTE_CONFIG",
-          "route.config.ts 必须与 page、layout、error、hydrate-fallback 或根 not-found 模块共置。",
+          "route.config.ts 必须与 page、layout、layout.handle、error、hydrate-fallback 或根 not-found 模块共置。",
           directory.files.config,
         ),
       );
     }
+  }
+  if (scan.files.notFoundHandle && !scan.files.notFound) {
+    diagnostics.push(
+      errorDiagnostic(
+        "RC_ORPHAN_NOT_FOUND_HANDLE",
+        "not-found.handle.ts/not-found.handle.tsx 需要同目录的 not-found.ts 或 not-found.tsx。",
+        scan.files.notFoundHandle,
+      ),
+    );
   }
 
   applyDirectoryFiles(scan, root, [], diagnostics, options, routeIds, routePaths);
@@ -218,6 +246,17 @@ function createPageChild(
   routePaths.push(pageNode.routePath);
   const config = readConfig(directory, diagnostics);
   addModule(pageNode, page, "default", "Component", config.lazy.page, options, diagnostics);
+  if (directory.files.handle) {
+    addModule(
+      pageNode,
+      directory.files.handle,
+      "handle",
+      "handle",
+      config.lazy.handle,
+      options,
+      diagnostics,
+    );
+  }
   if (loader) {
     addModule(pageNode, loader, "loader", "loader", config.lazy.loader, options, diagnostics);
   }
@@ -250,6 +289,17 @@ function createNotFoundChild(
   routePaths.push("/*");
   const config = readConfig(directory, diagnostics);
   addModule(node, file, "default", "Component", config.lazy.page, options, diagnostics);
+  if (directory.files.notFoundHandle) {
+    addModule(
+      node,
+      directory.files.notFoundHandle,
+      "handle",
+      "handle",
+      config.lazy.notFoundHandle,
+      options,
+      diagnostics,
+    );
+  }
   return [node];
 }
 
@@ -267,6 +317,17 @@ function applyDirectoryFiles(
 
   if (files.layout) {
     addModule(node, files.layout, "default", "Component", config.lazy.layout, options, diagnostics);
+  }
+  if (files.layoutHandle) {
+    addModule(
+      node,
+      files.layoutHandle,
+      "handle",
+      "handle",
+      config.lazy.layoutHandle,
+      options,
+      diagnostics,
+    );
   }
   if (files.error) {
     addModule(node, files.error, "default", "ErrorBoundary", config.lazy.error, options, diagnostics);

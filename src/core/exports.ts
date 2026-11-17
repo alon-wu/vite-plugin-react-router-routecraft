@@ -40,7 +40,12 @@ function collectExports(sourceFile: ts.SourceFile): Set<string> {
     }
 
     if (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) {
-      if (!hasModifier(statement, ts.SyntaxKind.ExportKeyword)) continue;
+      if (
+        !hasModifier(statement, ts.SyntaxKind.ExportKeyword) ||
+        hasModifier(statement, ts.SyntaxKind.DeclareKeyword)
+      ) {
+        continue;
+      }
       if (hasModifier(statement, ts.SyntaxKind.DefaultKeyword)) {
         exports.add("default");
       } else if (statement.name) {
@@ -50,18 +55,29 @@ function collectExports(sourceFile: ts.SourceFile): Set<string> {
     }
 
     if (ts.isVariableStatement(statement)) {
-      if (!hasModifier(statement, ts.SyntaxKind.ExportKeyword)) continue;
+      if (
+        !hasModifier(statement, ts.SyntaxKind.ExportKeyword) ||
+        hasModifier(statement, ts.SyntaxKind.DeclareKeyword)
+      ) {
+        continue;
+      }
       for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name)) exports.add(declaration.name.text);
+        for (const name of collectBindingNames(declaration.name)) {
+          exports.add(name);
+        }
       }
       continue;
     }
 
     if (ts.isExportDeclaration(statement) && statement.exportClause) {
+      if (statement.isTypeOnly) continue;
       if (ts.isNamedExports(statement.exportClause)) {
         for (const element of statement.exportClause.elements) {
+          if (element.isTypeOnly) continue;
           exports.add(element.name.text);
         }
+      } else if (ts.isNamespaceExport(statement.exportClause)) {
+        exports.add(statement.exportClause.name.text);
       }
     }
   }
@@ -69,9 +85,20 @@ function collectExports(sourceFile: ts.SourceFile): Set<string> {
   return exports;
 }
 
+function collectBindingNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+
+  return name.elements.flatMap((element) =>
+    ts.isOmittedExpression(element) ? [] : collectBindingNames(element.name),
+  );
+}
+
 function hasModifier(
   node: ts.Node,
-  kind: ts.SyntaxKind.ExportKeyword | ts.SyntaxKind.DefaultKeyword,
+  kind:
+    | ts.SyntaxKind.ExportKeyword
+    | ts.SyntaxKind.DefaultKeyword
+    | ts.SyntaxKind.DeclareKeyword,
 ): boolean {
   return (
     ts.canHaveModifiers(node) &&

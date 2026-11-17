@@ -55,10 +55,15 @@ export default {
 | `page` | `page.tsx` 的 `Component` | 无页面时不会生成页面。 |
 | `loader` | `loader.ts` 的 `loader` | 无文件时忽略。 |
 | `action` | `action.ts` 的 `action` | 无文件时忽略。 |
+| `handle` | `handle.ts` / `.tsx` 的 `handle` | 需要同目录 `page.ts` / `.tsx`；缺文件时忽略。 |
+| `layoutHandle` | `layout.handle.ts` / `.tsx` 的 `handle` | 无需 layout 组件；缺文件时忽略。 |
+| `notFoundHandle` | 根 `not-found.handle.ts` / `.tsx` 的 `handle` | 需要根 not-found 页面；缺文件时忽略。 |
 | `error` | `error.tsx` 的 `ErrorBoundary` | 无文件时忽略。 |
 | `hydrateFallback` | `hydrate-fallback.tsx` 的 `HydrateFallback` | 无文件时忽略。 |
 
 Routecraft 在 AST 层读取 `route.config.ts`，不执行该文件。必须默认导出对象字面量；`lazy` 下只能是直接布尔字面量属性。允许 TypeScript `satisfies`，但只允许 `import type`。不允许依赖运行时变量、函数调用、对象展开或普通运行时 import。未知/重复字段会得到错误诊断。
+
+这三个 handle 键彼此独立，也与 `page`、`layout` 等属性独立。例如 `layout: true` 不会让 `layoutHandle` 自动变成 `true`；每个已存在模块都分别继承 `defaultLazy`，也可在本目录覆写。
 
 ## 3. 生成形式与 React Router 的关系
 
@@ -75,9 +80,11 @@ Routecraft 在 AST 层读取 `route.config.ts`，不执行该文件。必须默�
 }
 ```
 
-若反过来配置 `page: false`、`loader: true`，则静态导入页面组件，并将 loader 放进 Route Object 的对象式 `lazy` 字段。Routecraft 可独立决定 `Component`、`loader`、`action`、`ErrorBoundary` 和 `HydrateFallback`。
+若反过来配置 `page: false`、`loader: true`，则静态导入页面组件，并将 loader 放进 Route Object 的对象式 `lazy` 字段。Routecraft 可独立决定 `Component`、`loader`、`action`、`handle`、`ErrorBoundary` 和 `HydrateFallback`。
 
-匹配阶段需要预先可见的 `path`、`index`、`id`、`children` 保持在 route 对象外层，不放进 lazy。`middleware.ts` 始终静态导入，不属于上述配置字段。
+匹配阶段需要预先可见的 `path`、`index`、`id`、`children` 保持在 route 对象外层，不放进 lazy。`middleware.ts` 始终静态导入，不属于上述配置字段。页面、结构和 not-found 的 handle 只从各自约定文件的命名导出获得；插件不读取 handle 的业务值。
+
+页面文件 `handle.ts` 的导出进入页面 index route；`layout.handle.ts` 进入当前目录结构 route（即使该节点没有 `layout.tsx`）；根 `not-found.handle.ts` 进入根 catch-all not-found route。若应用以 handle 展示标题或面包屑，应由应用代码消费 `useMatches()` 返回的当前匹配链，父子 handle 不会自动合并；懒加载 handle 也不应被假设为加载前即可用的静态菜单数据。
 
 React Router 官方允许保留静态匹配信息，同时用 route `lazy` 延迟加载实现属性；Routecraft 的对象形状按当前仓库实现生成。参考 [React Router Route Object：lazy](https://reactrouter.com/start/data/route-object)。
 

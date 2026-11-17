@@ -26,6 +26,9 @@ Routecraft 的 npm 包将 `docs/` 目录一并发布。安装在应用项目中�
 | `error.tsx` | 对应 route 的 `ErrorBoundary`。 |
 | `hydrate-fallback.tsx` | 对应 route 的 `HydrateFallback`，不等于导航 loading UI。 |
 | 根目录 `not-found.tsx` | 生成根 catch-all fallback；仅允许出现在路由根。 |
+| `handle.ts` / `.tsx` | 需要同目录页面；命名导出 `handle` 进入页面 index route。 |
+| `layout.handle.ts` / `.tsx` | 命名导出 `handle` 进入当前目录结构 route；不要求有 layout 组件。 |
+| 根 `not-found.handle.ts` / `.tsx` | 需要根 `not-found` 页面；命名导出 `handle` 进入根 not-found route。 |
 
 普通目录可以代表嵌套路由段；是否生成页面由约定文件与路由后代决定。不要仅凭目录存在就假设它是一个可访问页面。
 
@@ -34,7 +37,14 @@ Routecraft 的 npm 包将 `docs/` 目录一并发布。安装在应用项目中�
 - `loader.ts`、`action.ts` 需要同目录 `page.ts`/`page.tsx`，分别导出命名的 `loader` / `action`；文件缺失时不生成对应属性。
 - `layout.loader.ts`、`layout.action.ts` 需要同目录 layout。
 - `route.config.ts` 是静态配置，只能用支持的直接布尔值覆盖 eager/lazy 选择；不可依赖运行时变量或执行配置代码。
+- `handle`、`layoutHandle`、`notFoundHandle` 分别控制三类 handle 模块的 eager/lazy 方式，与页面和布局组件的设置相互独立。
 - 页面、布局及支持的组件/数据属性可以按配置分别 eager 或 lazy；middleware 保持静态导入。具体字段以该版本 `lazy-and-data.md` 为准。
+
+## Handle 与应用标题
+
+Routecraft 只检查 handle 模块是否提供命名导出 `handle`，并把该导出挂到对应 React Router route；不解析对象字段，也不提供标题、面包屑或权限业务逻辑。应用应自行定义例如 `AppRouteHandle` 的类型，并可用 `satisfies` 校验对象。
+
+需要动态标题时，应用在自己的布局组件中调用 `useMatches()`，从当前匹配链读取 `match.handle`，按应用规则选择标题，再由 `useEffect` 更新 `document.title`。父子 handle 不会由插件自动合并；lazy handle 在加载前也不是完整静态导航数据。
 
 ## 当前实现边界
 
@@ -44,5 +54,7 @@ Routecraft 的 npm 包将 `docs/` 目录一并发布。安装在应用项目中�
 - `[...parts]` 按 React Router splat 规则读取 `params["*"]` 字符串。
 - `useLoaderData()` 的业务返回值类型不做跨文件自动推导。
 - middleware 不是可信的服务端鉴权机制。
+- handle 只允许上述三个文件约定；不要把页面组件中的额外 `handle` 导出描述为 Routecraft 会自动收集。
+- 插件不会自动更新 `document.title`，也不会解析或序列化 handle 的实际业务值。
 
 遇到未支持的目录或文件约定时，应说明 Routecraft 当前边界，并提出可行的 React Router Data Mode 方案；不得通过新增同名文件暗示功能已经实现。

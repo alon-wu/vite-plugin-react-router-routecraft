@@ -5,6 +5,7 @@ export type RouteProperty =
   | "Component"
   | "loader"
   | "action"
+  | "handle"
   | "ErrorBoundary"
   | "HydrateFallback";
 

@@ -8,13 +8,13 @@
 | --- | --- | --- | --- |
 | 公开 API | `src/index.ts`、`src/types.ts` | 调用方选项 | 插件工厂与 TypeScript 配置类型。 |
 | Vite 配置适配 | `src/vite/options.ts` | Vite root、选项 | 绝对路径形式的 `ResolvedRoutecraftOptions`。 |
-| 目录扫描 | `src/core/scanner.ts` | `routesDir` 文件系统 | `ScanResult`、约定文件引用及扫描诊断。 |
+| 目录扫描 | `src/core/scanner.ts` | `routesDir` 文件系统 | `ScanResult`、约定文件引用（包括三类 handle 文件）及扫描诊断。 |
 | 段语法 | `src/core/segments.ts` | 目录名、路径片段 | `RouteSegment`、React Router path 片段与冲突比较形状。 |
 | 配置解析 | `src/core/config.ts` | `route.config.ts` 文本 | 静态 `RouteLazyConfig` 与配置错误；不执行配置模块。 |
 | 模块导出分析 | `src/core/exports.ts` | TS/TSX 源码、必需导出名 | 基于 TypeScript AST 的缺失导出诊断。 |
 | 诊断定义 | `src/core/diagnostics.ts` | 各阶段诊断信息 | 统一诊断结构及 `RoutecraftError`。 |
-| 中间表示 | `src/core/ir.ts` | 树、模块和路径概念 | `RouteNode`、`RouteModuleRef`、`MiddlewareModuleRef`、`RouteIR`。 |
-| 路由树构造 | `src/core/route-tree.ts` | 扫描结果、`defaultLazy` | 父子 Route IR、页面/布局/数据模块组合及路径冲突诊断。 |
+| 中间表示 | `src/core/ir.ts` | 树、模块和路径概念 | `RouteNode`、`RouteModuleRef`（包括 `handle`）、`MiddlewareModuleRef`、`RouteIR`。 |
+| 路由树构造 | `src/core/route-tree.ts` | 扫描结果、`defaultLazy` | 父子 Route IR、页面/布局/数据/handle 模块组合及路径冲突诊断。 |
 | Route Object 编译 | `src/core/compile-routes.ts` | `RouteNode` | 静态导入、对象式 `lazy` 和 `children` 的 TS 虚拟模块源码。 |
 | 类型生成 | `src/core/generate-types.ts` | `RouteIR` | 虚拟模块声明、Route ID、页面路径、参数及 `href` 签名。 |
 | 路径辅助 | `src/core/route-paths.ts` | 固定的生成请求 | 导入 React Router `generatePath` 的 `href()` 虚拟模块源码。 |
@@ -65,9 +65,12 @@ buildStart / 虚拟模块 load / 路由文件 handleHotUpdate
 - 目录中的 `layout.tsx` 设置当前结构节点的 `Component`。
 - 目录中的 `page.tsx` 另建 `index: true` 子 route。
 - page 相关 loader/action 附着到 index 子 route；layout 数据文件附着到结构 route。
+- `handle.ts` 附着到同目录页面 index route；`layout.handle.ts` 附着到目录结构 route，可独立于 `layout.tsx` 存在；根 `not-found.handle.ts` 附着到根 not-found route。
 - 根 not-found 页面单独生成 `/*` catch-all route。
 
 这也是 `layout.loader.ts` 与 `loader.ts` 不能混称“当前页面 loader”的原因：前者属于父结构 route，后者属于该目录页面 index route。
+
+三个 handle 文件均要求命名导出 `handle`。`route.config.ts` 的 `handle`、`layoutHandle` 和 `notFoundHandle` 分别决定对应模块的 eager/lazy 方式；它们与 `page`、`layout` 组件的配置相互独立。编译器只挂载导出，不解析实际 handle 业务值；DevTools 只呈现文件来源和加载方式。
 
 ## 文件变化和插件快照
 
@@ -86,5 +89,6 @@ buildStart / 虚拟模块 load / 路由文件 handleHotUpdate
 | 插件选项归一化 | `tests/unit/config.test.ts` |
 | Vite hook/DevTools/插件接入 | `tests/integration/vite-plugin.test.ts` |
 | 仓库示例编译契约 | `tests/integration/example-project.test.ts` |
+| Skill 路由行为评估用例 | `tests/skills/routecraft-file-routing.md`（人工评估集，需在隔离的消费项目中执行） |
 
 如文档与这些实现或测试不一致，应在发布前先核对代码并修正相应说明。
